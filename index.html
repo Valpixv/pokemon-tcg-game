@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pokémon Tabletop Battle</title>
+  <style>
+    :root { color-scheme: dark; --bg: #0d1117; --panel: rgba(20, 26, 36, 0.86); --ink: #eef3fb; --muted: #9aa6b8; --accent: #6fe7ff; --accent2: #a77bff; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, Segoe UI, sans-serif; overflow: hidden; }
+    #app canvas { display: block; }
+    #menu { position: fixed; inset: 0; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 30%, #1b2a3c 0%, #0d1117 70%); z-index: 10; padding: 16px; }
+    #menu .card { width: min(440px, 100%); background: var(--panel); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: 0.04em; }
+    .sub { margin: 0 0 22px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+    button.big { display: block; width: 100%; padding: 16px; margin: 10px 0; font-size: 18px; font-weight: 700; letter-spacing: 0.06em; color: #fff; border: 0; border-radius: 12px; cursor: pointer; background: linear-gradient(120deg, #1fa9c9, #7b5cff); }
+    button.big.alt { background: linear-gradient(120deg, #2b3446, #3a4560); }
+    button.big:disabled { opacity: 0.45; cursor: default; }
+    .row { display: flex; gap: 8px; margin: 8px 0; }
+    .row button { flex: 1; padding: 12px; font-weight: 700; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #232b3a; color: #fff; cursor: pointer; }
+    input[type=text] { flex: 1; min-width: 0; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: #111823; color: #fff; font-size: 16px; text-transform: uppercase; letter-spacing: 0.2em; }
+    label.opt { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; margin-top: 14px; }
+    #shared { display: none; margin-top: 6px; }
+    #status { color: var(--muted); font-size: 13px; margin-top: 12px; min-height: 1.2em; }
+    #hud { position: fixed; left: 12px; bottom: 12px; z-index: 5; background: var(--panel); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px 12px; font-size: 12px; color: var(--muted); line-height: 1.6; display: none; max-width: calc(100% - 24px); }
+    #hud b { color: var(--ink); }
+    #hud button { margin-top: 6px; margin-right: 6px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #232b3a; color: #fff; cursor: pointer; font-size: 12px; }
+    #menu { background: repeating-linear-gradient(-35deg,transparent 0 24px,#ffffff04 25px 26px), radial-gradient(ellipse at 48% 38%,#224b70,#0a192e 75%); overflow-y:auto; }
+    #menu .card { width:min(480px,100%); padding:0 26px 18px; overflow:hidden; border-color:#7394ad; background:#10253a; }
+    .lineup { position:relative; height:clamp(110px,25vh,218px); margin:0 -26px 22px; overflow:hidden; background:radial-gradient(circle at 50% 60%,transparent 0 36px,#fff8 37px 39px,transparent 40px 74px,#fff5 75px 77px,transparent 78px),linear-gradient(113deg,#82ccde 0%,#b9eee0 49.7%,#fce99a 50%,#f6be51 100%); border-bottom:4px solid #f9ca45; }
+    .lineup img { position:absolute; object-fit:contain; height:94%; width:57%; top:3%; filter:drop-shadow(2px 8px 3px #14263930); }
+    .lineup img:first-child {left:0; transform:scaleX(-1);}
+    .lineup img:last-child {right:-1%;}
+    h1 { font-size:clamp(25px,5vw,36px); letter-spacing:-.045em; line-height:1.08; }
+    .sub { margin:10px 0 17px; color:#c3d3dd; }
+    button.big { color:#142333; background:#ffd357; border-radius:8px; letter-spacing:.035em; }
+    button.big.alt { color:#eef6fa; background:#274259; }
+    button:hover { filter:brightness(1.1); }
+    button:focus-visible { outline:3px solid white; outline-offset:3px; }
+    #status:empty { display:none; }
+    #library { color:#f6f5e8; background:#11283b; border:1px solid #66849a; border-radius:16px; width:min(700px,94vw); max-height:88dvh; padding:20px; }
+    #library::backdrop {background:#06111cd9}
+    #library header,.tools {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    #library h2 {margin:0}
+    #library button, #library input, #library select, #hostTeam {font:inherit;color:inherit;background:#223e51;border:1px solid #68818e;padding:9px 12px;border-radius:7px}
+    #library button {cursor:pointer}
+    .teams,.collection {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .teams button {text-align:left}.teams img {width:31%;height:62px;object-fit:contain}
+    .teams strong,.teams small {display:block;margin:6px 0}
+    .collection button img {width:88px;height:68px;object-fit:contain;display:block;margin:auto}
+    .details {display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+    .details canvas {width:180px;height:auto}.details section {flex:1;min-width:160px}
+    .tools input {width:60%;min-width:0} #library footer {display:flex;justify-content:space-between;align-items:center;margin:12px 0 0}
+    .credits {display:block;color:#b6dae7;margin-top:14px;font-size:13px}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="menu">
+    <div class="card">
+      <div class="lineup" aria-hidden="true"><img src="%BASE_URL%pokemon/zubat.png" alt=""><img src="%BASE_URL%pokemon/pikachu.png" alt=""></div>
+      <h1>Pokémon Tabletop Battle</h1>
+      <p class="sub">Play with physical cards on your table or use the virtual deck.</p>
+      <button class="big" id="btnQuick">QUICK BATTLE</button>
+      <div class="row"><button id="btnTeams">Choose a team</button><button id="btnCollection">Card collection</button></div>
+      <button class="big alt" id="btnShared">PLAY AT THE SAME TABLE</button>
+      <div id="shared">
+        <label>Host matchup <select id="hostTeam"><option value="">Original demo</option><option value="random">Surprise me</option></select></label><div class="row"><button id="btnHost">HOST</button></div>
+        <div class="row"><input type="text" id="code" maxlength="6" placeholder="ROOM" autocomplete="off" aria-label="Room code" /><button id="btnJoin">JOIN</button></div>
+      </div>
+      <label class="opt"><input type="checkbox" id="skipHints" /> Skip tutorial hints</label>
+      <div id="status" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+  <dialog id="library" aria-labelledby="libraryTitle"><header><h2 id="libraryTitle"></h2><button id="closeLibrary">Close</button></header><div id="libraryBody"></div></dialog>
+  <div id="hud">
+    <b>Browser preview</b> · left-click = pinch · hold left-click on a card = inspect<br />
+    right-drag = orbit · wheel = zoom · <b>1</b>/<b>2</b> = your seat / opposite seat
+    <div><button id="seat0">Your seat</button><button id="seat1">Opposite seat</button><button id="toMenu">Menu</button></div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

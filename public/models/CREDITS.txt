@@ -1,0 +1,56 @@
+POKÉMON TABLETOP BATTLE — MODEL CREDITS
+
+Models, skins and source animation: Cobblemon team and contributors.
+CC BY-NC 3.0 — https://creativecommons.org/licenses/by-nc/3.0/
+Pokémon characters and names belong to their respective owners.
+Adaptations: native Three.js bone hierarchy and box UVs, sampled idle animation, scale, expression selection, local combat poses and effects.
+Portraits and item sprites: https://github.com/PokeAPI/sprites
+Switch uses an Escape Rope item illustration.
+
+Bulbasaur — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0001_bulbasaur
+bulbasaur_male.geo.json / bulbasaur.png / bulbasaur.animation.json
+Runtime animation: animation.bulbasaur.battle_idle
+License copy: bulbasaur/LICENSE.txt
+
+Charmander — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0004_charmander
+charmander.geo.json / charmander.png / charmander.animation.json
+Runtime animation: animation.charmander.battle_idle
+License copy: charmander/LICENSE.txt
+
+Squirtle — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0007_squirtle
+squirtle.geo.json / squirtle.png / squirtle.animation.json
+Runtime animation: animation.squirtle.battle_idle
+License copy: squirtle/LICENSE.txt
+
+Eevee — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0133_eevee
+eevee_male.geo.json / eevee.png / eevee.animation.json
+Runtime animation: animation.eevee.ground_idle
+License copy: eevee/LICENSE.txt
+
+Gastly — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0092_gastly
+gastly.geo.json / gastly.png / gastly.animation.json
+Runtime animation: animation.gastly.ground_idle
+License copy: gastly/LICENSE.txt
+
+Psyduck — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0054_psyduck
+psyduck.geo.json / psyduck.png / psyduck.animation.json
+Runtime animation: animation.psyduck.ground_idle
+License copy: psyduck/LICENSE.txt
+
+Sandshrew — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0027_sandshrew
+sandshrew.geo.json / sandshrew.png / sandshrew.animation.json
+Runtime animation: animation.sandshrew.battle_idle
+License copy: sandshrew/LICENSE.txt
+
+Magnemite — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0081_magnemite
+magnemite.geo.json / magnemite.png / magnemite.animation.json
+Runtime animation: animation.magnemite.air_idle
+License copy: magnemite/LICENSE.txt

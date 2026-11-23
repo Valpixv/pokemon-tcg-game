@@ -1,0 +1,146 @@
+[
+  {
+    "species": "bulbasaur",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0001_bulbasaur",
+    "geometry": "bulbasaur_male.geo.json",
+    "texture": "bulbasaur.png",
+    "animation": "bulbasaur.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0001_bulbasaur",
+    "runtimeClip": "animation.bulbasaur.battle_idle",
+    "runtimeFiles": [
+      "models/bulbasaur/model.json",
+      "models/bulbasaur/skin.png",
+      "models/bulbasaur/idle.json"
+    ]
+  },
+  {
+    "species": "charmander",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0004_charmander",
+    "geometry": "charmander.geo.json",
+    "texture": "charmander.png",
+    "animation": "charmander.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0004_charmander",
+    "runtimeClip": "animation.charmander.battle_idle",
+    "runtimeFiles": [
+      "models/charmander/model.json",
+      "models/charmander/skin.png",
+      "models/charmander/idle.json"
+    ]
+  },
+  {
+    "species": "squirtle",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0007_squirtle",
+    "geometry": "squirtle.geo.json",
+    "texture": "squirtle.png",
+    "animation": "squirtle.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0007_squirtle",
+    "runtimeClip": "animation.squirtle.battle_idle",
+    "runtimeFiles": [
+      "models/squirtle/model.json",
+      "models/squirtle/skin.png",
+      "models/squirtle/idle.json"
+    ]
+  },
+  {
+    "species": "eevee",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0133_eevee",
+    "geometry": "eevee_male.geo.json",
+    "texture": "eevee.png",
+    "animation": "eevee.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0133_eevee",
+    "runtimeClip": "animation.eevee.ground_idle",
+    "runtimeFiles": [
+      "models/eevee/model.json",
+      "models/eevee/skin.png",
+      "models/eevee/idle.json"
+    ]
+  },
+  {
+    "species": "gastly",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0092_gastly",
+    "geometry": "gastly.geo.json",
+    "texture": "gastly.png",
+    "animation": "gastly.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0092_gastly",
+    "runtimeClip": "animation.gastly.ground_idle",
+    "runtimeFiles": [
+      "models/gastly/model.json",
+      "models/gastly/skin.png",
+      "models/gastly/idle.json"
+    ]
+  },
+  {
+    "species": "psyduck",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0054_psyduck",
+    "geometry": "psyduck.geo.json",
+    "texture": "psyduck.png",
+    "animation": "psyduck.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0054_psyduck",
+    "runtimeClip": "animation.psyduck.ground_idle",
+    "runtimeFiles": [
+      "models/psyduck/model.json",
+      "models/psyduck/skin.png",
+      "models/psyduck/idle.json"
+    ]
+  },
+  {
+    "species": "sandshrew",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0027_sandshrew",
+    "geometry": "sandshrew.geo.json",
+    "texture": "sandshrew.png",
+    "animation": "sandshrew.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0027_sandshrew",
+    "runtimeClip": "animation.sandshrew.battle_idle",
+    "runtimeFiles": [
+      "models/sandshrew/model.json",
+      "models/sandshrew/skin.png",
+      "models/sandshrew/idle.json"
+    ]
+  },
+  {
+    "species": "magnemite",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0081_magnemite",
+    "geometry": "magnemite.geo.json",
+    "texture": "magnemite.png",
+    "animation": "magnemite.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0081_magnemite",
+    "runtimeClip": "animation.magnemite.air_idle",
+    "runtimeFiles": [
+      "models/magnemite/model.json",
+      "models/magnemite/skin.png",
+      "models/magnemite/idle.json"
+    ]
+  }
+]
