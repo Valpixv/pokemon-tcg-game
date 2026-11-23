@@ -6,6 +6,21 @@ Quick Battle opens the original Zubat versus Pikachu demo. **Choose a team** ope
 
 [Expansion roster, playthroughs and verification](docs/EXPANSION.md) · [Model credits and noncommercial license terms](public/models/CREDITS.txt) · [Card artwork source](https://github.com/PokeAPI/sprites)
 
+## Gameplay screenshots
+
+These frames come from a desktop browser test of the production build. To play the same opening, select **Choose a team**, enter seed **1024**, and choose **Night Garden**.
+
+![Bulbasaur faces Squirtle across the arena, with Gastly on the bench and the move buttons beside Bulbasaur’s card.](docs/captures/expansion/garden-near.jpg)
+
+**Opening turn.** After registering Bulbasaur and Gastly, the player can inspect the reserve or attack with Bulbasaur. The test held Gastly’s card to inspect it, dismissed it, then selected Vine Whip.
+
+| Calling an attack | Retreating to the bench |
+|---|---|
+| ![The arena displays “Bulbasaur used Vine Whip!” after the player selects the move.](docs/captures/expansion/vine-whip.jpg) | ![Gastly occupies the arena after retreat, with Bulbasaur’s card on the bench.](docs/captures/expansion/retreat.jpg) |
+| The test confirmed Vine Whip landed and the opponent replied. | After the player chose **Retreat** and selected Gastly, the test confirmed Gastly became the active Pokémon. |
+
+[Full browser test record](docs/captures/expansion/verification.json) · [All 12 figures from four angles](docs/captures/expansion/roster.jpg)
+
 ## Run it
 
 ```powershell
