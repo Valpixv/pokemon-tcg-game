@@ -142,5 +142,41 @@
       "models/magnemite/skin.png",
       "models/magnemite/idle.json"
     ]
+  },
+  {
+    "species": "pikachu",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0025_pikachu",
+    "geometry": "pikachu_male.geo.json",
+    "texture": "pikachu.png",
+    "animation": "pikachu.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0025_pikachu",
+    "runtimeClip": "animation.pikachu.battle_idle",
+    "runtimeFiles": [
+      "models/pikachu/model.json",
+      "models/pikachu/skin.png",
+      "models/pikachu/idle.json"
+    ]
+  },
+  {
+    "species": "zubat",
+    "revision": "90dceba19cdae707bbb8c1134c6488aaa6e911dc",
+    "folder": "blockbench/pokemon/gen1/0041_zubat",
+    "geometry": "zubat_male.geo.json",
+    "texture": "zubat.png",
+    "animation": "zubat.animation.json",
+    "artistCredit": "Cobblemon team and contributors",
+    "license": "CC BY-NC 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-nc/3.0/",
+    "sourceUrl": "https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0041_zubat",
+    "runtimeClip": "animation.zubat.air_idle",
+    "runtimeFiles": [
+      "models/zubat/model.json",
+      "models/zubat/skin.png",
+      "models/zubat/idle.json"
+    ]
   }
 ]

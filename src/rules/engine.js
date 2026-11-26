@@ -241,20 +241,29 @@ export function applyAction(prev, seat, action) {
       const target = foe.active;
       const bonus = atk.charged ? (MOVES.charge.bonus || 0) : 0;
       atk.charged = false;
-      if(move.dispel){target.guard=0;target.charged=false;}
+      // Authority facts for presentation: what the dispel stripped (null when the
+      // move has no dispel or nothing was there), what guard absorbed, and any
+      // delayed mark left on a surviving target. Extra fields only; older
+      // consumers can ignore them.
+      let dispelled=null;
+      if(move.dispel){
+        if(target.guard || target.charged) dispelled={guard:target.guard||0,charged:!!target.charged};
+        target.guard=0;target.charged=false;
+      }
       const blocked=Math.min(target.guard||0,move.damage+bonus);
       target.guard=0;
       const damage=move.damage+bonus-blocked;
       const from = target.hp;
       target.hp = Math.max(0, target.hp - damage);
-      events.push({ type: 'attack', seat, uid: atk.uid, id: atk.id, move: action.move, target: target.uid, targetId: target.id, damage, bonus, from, to: target.hp });
+      const mark=move.delayed && target.hp ? move.delayed : 0;
+      events.push({ type: 'attack', seat, uid: atk.uid, id: atk.id, move: action.move, target: target.uid, targetId: target.id, damage, bonus, from, to: target.hp, blocked, dispelled, mark });
       log(state, `${aName} used ${move.name}: ${damage} dmg`);
       if(blocked)log(state,`Guard blocked ${blocked} damage`);
       if(move.drain && atk.hp<atk.maxHp){
         const old=atk.hp;atk.hp=Math.min(atk.maxHp,atk.hp+Math.min(from-target.hp,move.drain));
         events.push({type:'heal',seat,uid:atk.uid,id:atk.id,from:old,to:atk.hp,source:move.name});
       }
-      if(move.delayed && target.hp) target.hex=move.delayed;
+      if(mark) target.hex=mark;
       if(move.recoil){
         const old=atk.hp;atk.hp=Math.max(0,atk.hp-move.recoil);
         events.push({type:'chip',seat,uid:atk.uid,id:atk.id,from:old,to:atk.hp,source:'Recoil'});

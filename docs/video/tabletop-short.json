@@ -1,0 +1,328 @@
+{
+  "width": 1080,
+  "height": 1920,
+  "seconds": 30,
+  "shots": [
+    {
+      "kind": "opening",
+      "start": 0,
+      "duration": 8,
+      "accepted": true,
+      "problems": [],
+      "initial": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 1,
+        "matchPhase": "play",
+        "active": [
+          "gloomwing#p0c2 40/40",
+          "voltpip#p1c8 60/60"
+        ],
+        "bench": [
+          [
+            "puffmire#p0c1 60",
+            null,
+            null
+          ],
+          [
+            "pebblit#p1c7 50",
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "40/40",
+          "60/60"
+        ],
+        "score": [
+          0,
+          0
+        ]
+      },
+      "final": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 3,
+        "matchPhase": "play",
+        "active": [
+          "gloomwing#p0c2 20/40",
+          "voltpip#p1c8 40/60"
+        ],
+        "bench": [
+          [
+            "puffmire#p0c1 60",
+            null,
+            null
+          ],
+          [
+            "pebblit#p1c7 50",
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "20/40",
+          "40/60"
+        ],
+        "score": [
+          0,
+          0
+        ]
+      },
+      "inspected": false,
+      "impacts": [
+        "fangSnap",
+        "sparkJab"
+      ],
+      "impactTimes": [
+        1.417,
+        3.333
+      ],
+      "impactRms": [
+        0.02524,
+        0.03781
+      ],
+      "overAt": null,
+      "audioActive": true,
+      "audioPeak": 0.4239,
+      "clipped": false
+    },
+    {
+      "kind": "inspection",
+      "start": 8,
+      "duration": 7,
+      "accepted": true,
+      "problems": [],
+      "initial": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 1,
+        "matchPhase": "play",
+        "active": [
+          "gloomwing#p0c2 40/40",
+          "voltpip#p1c8 60/60"
+        ],
+        "bench": [
+          [
+            "puffmire#p0c1 60",
+            null,
+            null
+          ],
+          [
+            "pebblit#p1c7 50",
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "40/40",
+          "60/60"
+        ],
+        "score": [
+          0,
+          0
+        ]
+      },
+      "final": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 1,
+        "matchPhase": "play",
+        "active": [
+          "gloomwing#p0c2 40/40",
+          "voltpip#p1c8 60/60"
+        ],
+        "bench": [
+          [
+            "puffmire#p0c1 60",
+            null,
+            null
+          ],
+          [
+            "pebblit#p1c7 50",
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "40/40",
+          "60/60"
+        ],
+        "score": [
+          0,
+          0
+        ]
+      },
+      "inspected": true,
+      "impacts": [],
+      "impactTimes": [],
+      "impactRms": [],
+      "overAt": null,
+      "audioActive": true,
+      "audioPeak": 0.1814,
+      "clipped": false
+    },
+    {
+      "kind": "showcase",
+      "start": 15,
+      "duration": 7,
+      "accepted": true,
+      "problems": [],
+      "initial": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 1,
+        "matchPhase": "play",
+        "active": [
+          "charmander#p0c2 50/50",
+          "squirtle#p1c13 60/60"
+        ],
+        "bench": [
+          [
+            "eevee#p0c1 50",
+            null,
+            null
+          ],
+          [
+            "sandshrew#p1c12 60",
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "50/50",
+          "60/60"
+        ],
+        "score": [
+          0,
+          0
+        ]
+      },
+      "final": {
+        "phase": "battle",
+        "current": 1,
+        "turn": 2,
+        "matchPhase": "play",
+        "active": [
+          "charmander#p0c2 50/50",
+          "squirtle#p1c13 60/60"
+        ],
+        "bench": [
+          [
+            "eevee#p0c1 50",
+            null,
+            null
+          ],
+          [
+            "sandshrew#p1c12 60",
+            "psyduck#p1c22 60",
+            "psyduck#p1c14 60"
+          ]
+        ],
+        "bars": [
+          "50/50",
+          "60/60"
+        ],
+        "score": [
+          0,
+          0
+        ]
+      },
+      "inspected": false,
+      "impacts": [
+        "ember"
+      ],
+      "impactTimes": [
+        1.708
+      ],
+      "impactRms": [
+        0.02396
+      ],
+      "overAt": null,
+      "audioActive": true,
+      "audioPeak": 0.272,
+      "clipped": false
+    },
+    {
+      "kind": "finish",
+      "start": 22,
+      "duration": 8,
+      "accepted": true,
+      "problems": [],
+      "initial": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 3,
+        "matchPhase": "play",
+        "active": [
+          "charmander#p0c2 20/50",
+          "gloomwing#p1c6 40/40"
+        ],
+        "bench": [
+          [
+            "squirtle#p0c1 60",
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "20/50",
+          "40/40"
+        ],
+        "score": [
+          1,
+          0
+        ]
+      },
+      "final": {
+        "phase": "battle",
+        "current": 0,
+        "turn": 3,
+        "matchPhase": "over",
+        "active": [
+          "charmander#p0c2 10/50",
+          null
+        ],
+        "bench": [
+          [
+            "squirtle#p0c1 60",
+            null,
+            null
+          ],
+          [
+            null,
+            null,
+            null
+          ]
+        ],
+        "bars": [
+          "10/50",
+          "0/40"
+        ],
+        "score": [
+          2,
+          0
+        ]
+      },
+      "inspected": false,
+      "impacts": [
+        "takeDown"
+      ],
+      "impactTimes": [
+        2.458
+      ],
+      "impactRms": [
+        0.02335
+      ],
+      "overAt": 2.042,
+      "audioActive": true,
+      "audioPeak": 0.3575,
+      "clipped": false
+    }
+  ]
+}

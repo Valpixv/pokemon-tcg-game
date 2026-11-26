@@ -1,0 +1,4 @@
+Item sprites from PokeAPI/sprites, https://github.com/PokeAPI/sprites/tree/master/sprites/items
+Downloaded filenames correspond to their upstream item names. Pokemon and item artwork belong to their respective owners.
+Terminal styling and stadium markings were drawn for this project.
+Battle animation artwork: shine.png and pokeball.png from https://github.com/smogon/pokemon-showdown-client/tree/master/play.pokemonshowdown.com/fx (local filenames prefixed fx-).

@@ -1,0 +1,19 @@
+Tabletop Battle demo films - shot list
+Render: node tools/capture-demo.mjs [short|wide|both]   (seeded: Math.random seed 1024 per shot, fresh browser profile)
+
+SHORT  1080x1920, 30 s
+ 0-8   opening     Quick Battle, one attack each side
+ 8-15  inspection  hold bench card, preview opens, closes at 6 s
+15-22  showcase    rush vs tide (seed 1024), straight to attacks, no bench filling
+22-30  finish      knockout-promotion demo, last Take Down and victory on camera
+
+WIDE   1920x1080, 76 s
+ 0-6   opening | 6-16 registration | 16-25 inspection | 25-37 exchange
+37-51  showcase | 51-63 garden (Gastly marks Bulbasaur, then Bulbasaur retreats) | 63-76 finish
+
+Rules for every attack shot
+ - new actions only until duration-3 s (finish: duration-2.5 s) so hits resolve on screen
+ - each impact needs audible sound (RMS >= 0.002 in t-0.15..t+0.8 s)
+ - final HP bars must equal active HP (no shot ends mid-animation)
+Finish: starts in phase play with a legal winning Take Down available; victory between 1 s and duration-2 s.
+Acceptance: script prints EXPORT ACCEPTED and exits 0; each shot in the .json has accepted:true.

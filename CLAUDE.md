@@ -1,0 +1,1 @@
+@docs/CLAUDE_ASSIGNMENTS.md

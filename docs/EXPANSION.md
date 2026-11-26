@@ -16,7 +16,7 @@ The game has **16 distinct card definitions**. Twelve are Pokémon and four are 
 |---|---:|---|---|---|---|
 | Charmander | 50 | Ember 20, Take Down 40 | Finisher with 10 recoil | Flame Dash | Imported |
 | Eevee | 50 | Quick Attack 20, Baton Pass 10 | Switches to a chosen reserve after impact | Flame Dash | Imported |
-| Zubat | 40 | Bite 20 | Fast contact attacker | Flame Dash | Existing |
+| Zubat | 40 | Bite 20 | Fast contact attacker | Flame Dash | Imported |
 | Squirtle | 60 | Water Gun 20, Withdraw | Blocks 10 damage from one hit | Shell Guard | Imported |
 | Sandshrew | 60 | Scratch 20, Defense Curl | Blocks 20 damage from one hit | Shell Guard | Imported |
 | Psyduck | 60 | Water Gun 20, Confusion 10 | Confusion clears guard and charge before damage | Shell Guard | Imported |
@@ -24,7 +24,7 @@ The game has **16 distinct card definitions**. Twelve are Pokémon and four are 
 | Gastly | 50 | Lick 20, Hex 10 | Hex marks a specific card for another 15 at its owner's turn end | Night Garden | Imported |
 | Koffing | 60 | Suffocating Gas 20 | Gas attacker | Night Garden | Existing |
 | Magnemite | 50 | Thunder Shock 20, Charge | Banks a one-use +10 bonus | Magnetic Field | Imported |
-| Pikachu | 60 | Pika Punch 20, Charge | Electric contact attacker | Magnetic Field | Existing |
+| Pikachu | 60 | Pika Punch 20, Charge | Electric contact attacker | Magnetic Field | Imported |
 | Geodude | 50 | Rock Throw 30 | High-damage reserve | Magnetic Field | Existing |
 
 **Potion** heals one damaged friendly Pokémon by up to 20. **Switch** swaps the active with a living reserve and retains the turn. **Poké Ball** takes the first Basic from the deck into the owner's private hand. **X Attack** grants one friendly Pokémon the same nonstacking bonus as Charge. Each expanded team can play one Trainer per turn. Empty Poké Ball searches and invalid targets preserve the card. Select the card again or choose Cancel to dismiss selection.
@@ -33,7 +33,7 @@ Guard persists through retreat and applies to the next direct damaging attack. H
 
 ## Model credits and implementation
 
-**Eight imported models, four existing procedural figures, zero newly authored replacement species.** All eight imports come from CableMC's Cobblemon Assets repository, revision `90dceba19cdae707bbb8c1134c6488aaa6e911dc`. They use creator-authored Bedrock geometry and texture atlases. The game constructs a Three.js bone hierarchy directly from these files. The desktop art pass adds combat poses, a flame at Charmander's tail, a small Gastly aura, and attack effects. Card portraits are separate PNGs.
+**Ten imported models and two sculpted figures (Koffing and Geodude).** All ten imports come from CableMC's Cobblemon Assets repository, revision `90dceba19cdae707bbb8c1134c6488aaa6e911dc`. They use creator-authored Bedrock geometry and texture atlases. The game constructs a Three.js bone hierarchy directly from these files. The desktop art pass adds combat poses, a flame at Charmander's tail, a small Gastly aura, and attack effects. Card portraits are separate PNGs.
 
 Every row in the [source manifest](../public/models/sources.json) includes the direct pinned source folder, original filenames, exact runtime paths, credited creator, and license URL. The [in-game credits](../public/models/CREDITS.txt) are also reachable through Card collection. Each species directory contains a copy of the source license. The model package uses **CC BY-NC 3.0**. Pokémon characters belong to their respective owners.
 
@@ -46,9 +46,11 @@ Every row in the [source manifest](../public/models/sources.json) includes the d
 | Cobblemon contributors · Gastly | public/models/gastly | animation.gastly.ground_idle |
 | Cobblemon contributors · Psyduck | public/models/psyduck | animation.psyduck.ground_idle |
 | Cobblemon contributors · Sandshrew | public/models/sandshrew | animation.sandshrew.battle_idle |
+| Cobblemon contributors · Zubat | public/models/zubat | animation.zubat.air_idle |
+| Cobblemon contributors · Pikachu | public/models/pikachu | animation.pikachu.battle_idle |
 | Cobblemon contributors · Magnemite | public/models/magnemite | animation.magnemite.air_idle |
 
-Geometry, texture and baked animation are loaded on first use of a species. An eight-entry maximum source cache shares geometry and textures. Visible cubes share one rigidly weighted skinned mesh per species. Each figure owns its skeleton, material, bone transforms, tint and attack pose. A spawn token discards superseded loads and disposal invalidates pending spawns. Source clips are sampled offline with `python tools/bake-model-idles.py`. Runtime playback uses numeric tracks. Eevee adds a tail wag to its held source pose. No external decoder is required.
+Geometry, texture and baked animation are loaded on first use of a species. A ten-entry maximum source cache shares geometry and textures. Visible cubes share one rigidly weighted skinned mesh per species. Each figure owns its skeleton, material, bone transforms, tint and attack pose. A spawn token discards superseded loads and disposal invalidates pending spawns. Source clips are sampled offline with `python tools/bake-model-idles.py`. Runtime playback uses numeric tracks. Eevee adds a tail wag to its held source pose. No external decoder is required.
 
 ## Verification
 
@@ -59,7 +61,7 @@ Geometry, texture and baked animation are loaded on first use of a species. An e
 | Balance | Hex deals 10 on impact and 15 at turn end. Night Garden won 30 of 64 meetings with Shell Guard across both seats, up from 5 with the original 10-point mark. On a separate set of seeds (101 through 132), the same result rose from 7 to 28 wins out of 64. First-seat advantage persists. |
 | Normal desktop preview | Menu selection, card inspection, registration, attacks, retreat, promotion, a complete match and rematch exercised in Edge. A synthetic pointer drove the opening. Automated choices used the game controller for the longer match. |
 | Shared game | Two browser clients over the preview relay, targeted X Attack, authoritative charged hit, hidden guest view and reconnect snapshot. |
-| Cold production build | Fresh page loads, browser cache disabled, all non-local page requests blocked. Checked all presets, the original exchange, all eight local imports and independent same-species instances. Checked animated vertex movement on all eight imports and captured four angles for all twelve figures beside the bundled portraits. |
+| Cold production build | Fresh page loads, browser cache disabled, all non-local page requests blocked. Checked all presets, the original exchange, all ten local imports and independent same-species instances. Checked animated vertex movement on all ten imports and captured four angles for all twelve figures beside the bundled portraits. |
 | One Quest 3S | Untested on hardware. |
 | Two headsets and physical alignment | Untested on hardware. |
 | Quest frame time and thermal behavior | Unmeasured. Desktop draw counts describe the capture scene only. |

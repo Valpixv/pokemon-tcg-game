@@ -5,7 +5,12 @@ import * as THREE from 'three';
 // render loop (window rAF and XR session rAF alike).
 const tasks = new Set();
 let now = 0;
+// Hit-stop: on impact, animation time holds for a few frames so a hit lands
+// with weight. Counted in simulation time, so fixed-step captures stay exact.
+let hold = 0;
+export function hitStop(seconds) { hold = Math.max(hold, seconds); }
 export function tick(dt) {
+  if (hold > 0) { const used = Math.min(hold, dt); hold -= used; dt -= used; if (dt <= 0) return; }
   now += dt;
   for (const t of [...tasks]) {
     const p = Math.min(1, (now - t.start) / t.dur);
@@ -37,7 +42,7 @@ export class Label extends THREE.Mesh {
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 4;
-    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest, side: THREE.DoubleSide });
+    const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest, side: THREE.DoubleSide, toneMapped: false });
     super(new THREE.PlaneGeometry(width, height), mat);
     Object.assign(this, { canvas, tex, opts: { font, color, bg, radius, align, spacing, lineHeight, padding, border }, text: null });
     this.renderOrder = 10;

@@ -1,7 +1,9 @@
 // Brief, lightweight battle effects. They only animate - they never change
 // HP; HP bars are driven by the confirmed battle event.
 import * as THREE from 'three';
-import { tween, ease, lerp, blobTexture } from './util.js';
+import { MoveTrail } from './move-trail.js';
+import { tween, ease, lerp, blobTexture, Label } from './util.js';
+import { impactBurst, burstMaterial, BURST_STYLE } from './impact-burst.js';
 
 const additive = (color, opacity = 1) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
 const spriteMat = (color, opacity = 1, add = true) => new THREE.SpriteMaterial({ map: blobTexture(), color, transparent: true, opacity, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
@@ -11,7 +13,17 @@ function disposeTree(o) { o.traverse((c) => { if (!c.isSprite) c.geometry?.dispo
 
 export class Effects {
   // viewQuat(out): writes the viewer's world orientation (set by the game)
-  constructor(parent) { this.root = new THREE.Group(); parent.add(this.root); this.viewQuat = null; }
+  constructor(parent) { this.root = new THREE.Group(); parent.add(this.root); this.viewQuat = null; this.trail = new MoveTrail(this.root); this.bite = this.makeBite(); this.punch = this.makePunch(); }
+
+  effectTexture(name) {
+    this.effectMaps ??= new Map();
+    if (!this.effectMaps.has(name)) {
+      const map = new THREE.TextureLoader().load(import.meta.env.BASE_URL + 'trainer-kit/fx-' + name + '.png');
+      map.colorSpace = THREE.SRGBColorSpace;
+      this.effectMaps.set(name, map);
+    }
+    return this.effectMaps.get(name);
+  }
 
   // Compile every material variant the effects use, once, before the first
   // attack, so the first impact does not stall on shader compilation.
@@ -23,6 +35,7 @@ export class Effects {
     g.add(new THREE.Mesh(tri, new THREE.MeshBasicMaterial({ color: '#000', transparent: true, depthWrite: false, side: THREE.DoubleSide })));
     g.add(new THREE.Sprite(spriteMat('#fff', 1, true)), new THREE.Sprite(spriteMat('#fff', 1, false)));
     g.add(new THREE.Mesh(tri, new THREE.MeshStandardMaterial({ color: '#888', flatShading: true })));
+    g.add(new THREE.Points(tri, burstMaterial(BURST_STYLE.contact)));
     try { renderer.compile(scene, camera); } catch { /* compile is an optimisation only */ }
     // Keep these materials alive (never disposed): three.js frees a shader
     // program when its last material is disposed, so without keepers every
@@ -30,42 +43,59 @@ export class Effects {
     // ...and actually draw them for a couple of frames at sub-pixel size: some
     // backends (ANGLE/D3D, mobile GL) finish shader setup only on first draw.
     this.keeperDraws = 0;
-    g.traverse((o) => { o.frustumCulled = false; if (o.isMesh || o.isSprite) o.onAfterRender = () => { this.keeperDraws++; }; });
+    g.traverse((o) => { o.frustumCulled = false; if (o.isMesh || o.isSprite || o.isPoints) o.onAfterRender = () => { this.keeperDraws++; }; });
     this.keepers = g;
   }
   // remove the warm-up meshes once they have really been drawn (twice)
   tick() { if (this.keepers?.parent && this.keeperDraws >= 2 * this.keepers.children.length) this.keepers.removeFromParent(); }
-  disposeKeepers() { if (this.keepers) { disposeTree(this.keepers); this.keepers = null; } }
-  clear() { [...this.root.children].forEach(disposeTree); }
+  disposeKeepers() { this.effectMaps?.forEach(map => map.dispose()); disposeTree(this.bite.g); disposeTree(this.punch.g); if (this.keepers) { disposeTree(this.keepers); this.keepers = null; } }
+  clear() {
+    this.trail.clear();
+    this.damageToken=null;
+    if(this.damageTag)this.damageTag.visible=false;
+    for (const child of [...this.root.children]) {
+      if (child !== this.trail.mesh && child !== this.keepers && child !== this.damageTag && child !== this.bite.g && child !== this.punch.g) disposeTree(child);
+    }
+  }
 
-  async projectile(kind,start,end,land) {
-    const colors={water:'#5fcfff',ember:'#ff7029',vine:'#64a941',drain:'#9ade62',psychic:'#f38be8',ghost:'#a47bed',electric:'#ffe654'};
-    const group=new THREE.Group();this.root.add(group);
-    const material=new THREE.MeshBasicMaterial({color:colors[kind],transparent:true,opacity:.94});
-    const stream=kind==='water'||kind==='vine';
-    const geometry=stream?new THREE.CylinderGeometry(.0018,.0026,1,7):new THREE.IcosahedronGeometry(.008,1);
-    const parts=Array.from({length:kind==='vine'?2:3},()=>{const mesh=new THREE.Mesh(geometry,material);group.add(mesh);return mesh;});
-    const direction=new THREE.Vector3(),tip=new THREE.Vector3(),base=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);
-    await tween(.29,p=>parts.forEach((part,i)=>{
-      const t=Math.max(0,p-i*.055);
-      tip.lerpVectors(start,end,t);tip.y+=Math.sin(Math.PI*t)*(.006+i*.002);
-      tip.x+=Math.sin(Math.PI*t)*(i-1)*.009;
-      if(stream){
-        base.lerpVectors(start,end,kind==='vine'?0:Math.max(0,t-.24));
-        direction.subVectors(tip,base);part.scale.y=Math.max(.0001,direction.length());
-        part.position.copy(base).lerp(tip,.5);if(direction.lengthSq())part.quaternion.setFromUnitVectors(up,direction.normalize());
-      }else{part.position.copy(tip);part.scale.setScalar(1-i*.19);part.rotation.y=t*7;}
-    }));
-    land();await tween(.10,p=>{material.opacity=1-p;});
-    group.removeFromParent();geometry.dispose();material.dispose();
+  // Type-coloured particles and a turf ring under every hit (see impact-burst.js).
+  burst(effect, point, ground, heavy = false) { return impactBurst(this.root, effect, point, ground, heavy); }
+
+  projectile(kind, start, end, land) {
+    return this.trail.play(kind, start, end, land);
+  }
+
+  async damage(point, event) {
+    if (!this.damageTag) {
+      this.damageTag = new Label({width:.065,height:.022,px:384,font:'800 74px system-ui',
+        bg:'#172235',border:'#e9dfbe',radius:.38,depthTest:false});
+      this.root.add(this.damageTag);
+    }
+    const tag=this.damageTag, token=Symbol();
+    this.damageToken=token;
+    const amount=event.from-event.to;
+    tag.set(event.blocked ? amount+' / BLOCK '+event.blocked : '−'+amount,
+      {color:event.bonus?'#ffdd6b':'#fff9e8'});
+    tag.position.copy(point); tag.position.y+=.018; tag.visible=true;
+    // Pop past full size, settle with a small bounce; heavy hits read bigger.
+    const big=amount>=30||event.to===0?1.22:1;
+    await tween(.66,p=>{
+      if(this.damageToken!==token)return;
+      tag.position.y=point.y+.018+.025*ease.out(p);
+      const pop=p<.18?.55+.75*ease.out(p/.18):1.3-.3*(1-Math.exp(-(p-.18)*9)*Math.cos((p-.18)*22));
+      tag.scale.setScalar(big*pop);
+      tag.material.opacity=Math.min(1,(1-p)*4);
+      if(this.viewQuat){this.viewQuat(_qa);this.root.getWorldQuaternion(_qb).invert();tag.quaternion.copy(_qb.multiply(_qa));}
+    });
+    if(this.damageToken===token)tag.visible=false;
   }
 
   // Bite: the effect PEAKS ON ITS FIRST FRAME (it is started by the single
   // impact event), as a dense violet bloom at the contact point. Curved
   // fang-like fragments flash outward and the centre clears within ~0.15 s so
   // the defender's recoil is visible.
-  async fang(pos) {
-    const g = new THREE.Group(); g.position.copy(pos); this.root.add(g);
+  makeBite() {
+    const g = new THREE.Group();
     // normal-blended body keeps it violet on pale wood; a small additive core gives the hot centre
     const orb = new THREE.Mesh(new THREE.SphereGeometry(0.018, 18, 12), new THREE.MeshBasicMaterial({ color: '#7a1fd6', transparent: true, opacity: 0.85, depthWrite: false }));
     const core = new THREE.Mesh(new THREE.SphereGeometry(0.009, 14, 10), additive('#f3d6ff', 1));
@@ -79,7 +109,13 @@ export class Effects {
       f.rotation.set(0, 0, a + Math.PI / 2); // crescents open outward, like a bite mark
       g.add(f); frags.push(f);
     }
-    await tween(0.36, (p) => {
+    return { g, orb, core, glow, frags };
+  }
+
+  async fang(pos) {
+    const {g, orb, core, glow, frags}=this.bite;
+    g.position.copy(pos); this.root.add(g);
+    const draw = (p) => {
       const clear = ease.out(Math.min(1, p / 0.42));          // centre clears in ~0.15 s
       orb.scale.setScalar(1 + 0.7 * clear); orb.material.opacity = 0.85 * (1 - clear);
       core.scale.setScalar(1 - 0.6 * clear); core.material.opacity = 1 - clear;
@@ -89,15 +125,15 @@ export class Effects {
         f.material.opacity = p < 0.15 ? 1 : 1 - ease.in((p - 0.15) / 0.85);
         f.scale.setScalar(1 - 0.3 * p);
       }
-    });
-    disposeTree(g);
+    };
+    draw(0); await tween(.36,draw); g.removeFromParent();
   }
 
   // Pika Punch: a bright core and a few distinct jagged branches with a dark
   // under-rim (reads on the lime field and on light wood), decaying fast.
   // Peaks on its first frame, re-jags once.
-  async electric(pos) {
-    const g = new THREE.Group(); g.position.copy(pos); this.root.add(g);
+  makePunch() {
+    const g = new THREE.Group();
     const center = new THREE.Sprite(spriteMat('#fffdf0', 1)); center.scale.setScalar(0.04);
     const halo = new THREE.Sprite(spriteMat('#ffd000', 0.85)); halo.scale.setScalar(0.08);
     g.add(halo, center);
@@ -108,37 +144,42 @@ export class Effects {
       const a1 = a.clone().add(side), a2 = a.clone().sub(side), b1 = b.clone().addScaledVector(side, 0.6), b2 = b.clone().addScaledVector(side, -0.6);
       out.push(...a1.toArray(), ...a2.toArray(), ...b1.toArray(), ...a2.toArray(), ...b2.toArray(), ...b1.toArray());
     };
-    const build = () => {
-      for (const n of ['bolts', 'rim']) { const old = g.getObjectByName(n); if (old) { old.geometry.dispose(); g.remove(old); } }
+    const build = (variant) => {
+      const pattern = new THREE.Group();
+      g.add(pattern);
       const hotV = [], rimV = [];
       const count = 5;
       for (let i = 0; i < count; i++) {
-        const ang = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+        const ang = (i / count) * Math.PI * 2 + Math.sin(i*2.4+variant)*.36;
         const dir = new THREE.Vector3(Math.cos(ang), Math.sin(ang) * 0.9, 0); // branches lie in the view plane (billboarded below)
         const nrm = new THREE.Vector3(-dir.y, dir.x, 0);
-        let p = dir.clone().multiplyScalar(0.006); const len = 0.032 + Math.random() * 0.016; const segs = 3;
+        let p = dir.clone().multiplyScalar(0.006); const len = 0.039 + Math.sin(i+variant)*.007; const segs = 3;
         for (let s = 0; s < segs; s++) {
-          const q = p.clone().addScaledVector(dir, len / segs).addScaledVector(nrm, (s % 2 ? -1 : 1) * (0.004 + Math.random() * 0.003));
+          const q = p.clone().addScaledVector(dir, len / segs).addScaledVector(nrm, (s % 2 ? -1 : 1) * (0.004 + (1+Math.cos(i+s+variant))*.0015));
           const w = 0.0026 * (1 - s / segs) + 0.0008;
           quad(rimV, p, q, w * 2.1); quad(hotV, p, q, w);
           p = q;
         }
       }
-      const mk = (v, mat, name, order) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); const m = new THREE.Mesh(geo, mat); m.name = name; m.renderOrder = order; g.add(m); };
+      const mk = (v, mat, name, order) => { const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); const m = new THREE.Mesh(geo, mat); m.name = name; m.renderOrder = order; pattern.add(m); };
       mk(rimV, rim, 'rim', 30); mk(hotV, hot, 'bolts', 31);
+      return pattern;
     };
-    build();
-    let rejagged = false;
-    await tween(0.32, (p) => {
-      if (!rejagged && p > 0.25) { rejagged = true; build(); }
+    return {g, center, halo, rim, hot, first: build(0), second: build(1)};
+  }
+  async electric(pos) {
+    const {g, center, halo, rim, hot, first, second} = this.punch;
+    g.position.copy(pos);this.root.add(g);
+    const draw = (p) => {
+      first.visible=p<=.25;second.visible=!first.visible;
       const k = (1 - p) ** 2.2;                         // fast decay from a first-frame peak
       center.scale.setScalar(0.022 + 0.022 * k); center.material.opacity = k;
       halo.scale.setScalar(0.06 + 0.05 * p); halo.material.opacity = 0.85 * k;
       hot.opacity = k; rim.opacity = 0.45 * k;
       g.scale.setScalar(0.9 + 0.25 * ease.out(p));
       if (this.viewQuat) { this.viewQuat(_qa); this.root.getWorldQuaternion(_qb).invert(); g.quaternion.copy(_qb.multiply(_qa)); } // branches face the viewer
-    });
-    disposeTree(g); hot.dispose(); rim.dispose();
+    };
+    draw(0);await tween(.32,draw);g.removeFromParent();
   }
 
   // Several muted purple-green clouds drift toward the target, expand and
@@ -216,8 +257,15 @@ export class Effects {
     const g = new THREE.Group(); g.position.copy(pos); this.root.add(g);
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.01, 0.014, 32), additive('#ffffff', 0.8));
     ring.rotation.x = -Math.PI / 2; g.add(ring);
+    const recall = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: this.effectTexture('pokeball'), transparent: true, depthWrite: false
+    }));
+    g.add(recall);
     const puffs = Array.from({ length: 6 }, (_, i) => { const s = new THREE.Sprite(spriteMat('#e8e8f0', 0.6, false)); s.userData.a = (i / 6) * Math.PI * 2; g.add(s); return s; });
     await tween(0.6, (p) => {
+      recall.position.y = .013 + .035 * ease.out(p);
+      recall.scale.setScalar(.044 * (1 - p * .55));
+      recall.material.opacity = Math.min(1, (1 - p) * 3);
       ring.scale.setScalar(1 + p * 4); ring.material.opacity = 0.8 * (1 - p);
       for (const s of puffs) { s.position.set(Math.cos(s.userData.a) * 0.04 * p, 0.01 + 0.02 * p, Math.sin(s.userData.a) * 0.04 * p); s.scale.setScalar(0.015 + 0.02 * p); s.material.opacity = 0.6 * (1 - p); }
     });
@@ -227,7 +275,9 @@ export class Effects {
   async heal(pos) {
     const g = new THREE.Group(); g.position.copy(pos); this.root.add(g);
     const parts = Array.from({ length: 8 }, (_, i) => {
-      const s = new THREE.Sprite(spriteMat('#7dff9a', 0)); s.scale.setScalar(0.012);
+      const material = spriteMat('#abff9c', 0);
+      material.map = this.effectTexture('shine');
+      const s = new THREE.Sprite(material); s.scale.setScalar(0.012);
       s.userData = { x: (Math.random() - 0.5) * 0.04, z: (Math.random() - 0.5) * 0.04, d: i * 0.05 }; g.add(s); return s;
     });
     await tween(0.8, (p) => {

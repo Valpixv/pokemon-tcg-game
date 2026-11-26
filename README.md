@@ -2,7 +2,7 @@
 
 A mixed-reality card battle for Meta Quest 3S. It runs in Quest Browser over WebXR, with color passthrough and hand tracking. You place a miniature arena on a real table, register your cards in outlined slots, and pinch to make your active creature attack. A mouse-driven browser preview plays the same match on a PC.
 
-Quick Battle opens the original Zubat versus Pikachu demo. **Choose a team** opens four expanded presets with eight imported Pokémon, and **Card collection** shows all 12 Pokémon and four Trainers. Models, textures and card artwork are served locally. The card rules are custom to this tabletop format.
+Quick Battle opens the original Zubat versus Pikachu demo. **Choose a team** opens four expanded presets with ten imported Pokémon across the roster, and **Card collection** shows all 12 Pokémon and four Trainers. Models, textures and card artwork are served locally. The card rules are custom to this tabletop format.
 
 [Expansion roster, playthroughs and verification](docs/EXPANSION.md) · [Model credits and noncommercial license terms](public/models/CREDITS.txt) · [Card artwork source](https://github.com/PokeAPI/sprites)
 
@@ -68,7 +68,7 @@ npm run dev:quest
 - http://localhost:5173/?mode=host&room=TEST
 - http://localhost:5173/?mode=guest&room=TEST
 
-**Tests:** `npm test` runs the rules engine, the AI, the pointer/pinch logic, and host/guest sync over an in-memory link (25 tests).
+**Tests:** `npm test` runs the rules engine, the AI, the pointer/pinch logic, host/guest synchronization, and the four scripted demos. The latest run passed all 55 tests.
 
 **Browser test harness (dev only):** with a preview page open, run this in its console. It drives the game through the real pointer path and steps time deterministically:
 
@@ -79,6 +79,19 @@ H.snapshot(); await H.profile(1.5); H.counts();
 ```
 
 [tools/harness.js](tools/harness.js) is never imported by the game and isn't part of the production build.
+
+**Solo demos (desktop only):** each demo plays a fixed Quick Battle through the same validated request path as a player and the AI. Nothing writes game state directly.
+
+- http://localhost:5173/?demo=opening-exchange: you attack, the opponent answers.
+- http://localhost:5173/?demo=team-showcase&seed=19&team=coil&away=rush: each side plays its trainer if that's legal, then attacks.
+- [Knockout and promotion](http://localhost:5173/?demo=knockout-promotion) follows two Take Downs through a forced promotion and a win.
+- [Hex on the bench](http://localhost:5173/?demo=hex-on-bench) follows one Bulbasaur from 60 to 50 HP on the field and then to 35 HP on the bench.
+
+If a step never becomes playable (10 s) or the table never settles (30 s of continuous animation or pending requests), the demo stops with a `failed` cue and gives you control. From then on, normal solo AI plays the opponent. Time spent paused (card preview open, connection pause) counts toward neither limit. Leaving the game disposes the demo silently. Demos are ignored in XR and in shared rooms.
+
+**Capturing demo video:** `node tools/capture-demo.mjs` runs Vite and headless Edge (set `EDGE_PATH` if Edge is somewhere else) and writes WebM clips to `docs/video/`. Each clip is checked against acceptance rules (audible impacts, attacks landing, time left for them to resolve), and the script exits 1 if any clip is rejected. Run `npm test` for the demo lifecycle tests in [tests/demo.test.mjs](tests/demo.test.mjs).
+
+**Scope and evidence:** the demos and captures are **desktop browser evidence only**: a headless Chromium renderer using SwiftShader. They show that the rules, the request path and the presentation work. They are not evidence of Quest behaviour. Passthrough, plane/anchor placement, pinch input and headset performance still need to be checked on a real Quest. Final export acceptance of the captured video is **pending review**.
 
 ## How it fits together
 
@@ -144,7 +157,7 @@ Other changes:
 
 Not changed: creature shapes and card artwork. Only motion, timing, placement and effects were touched.
 
-## Test record (this revision)
+## Earlier desktop polish test record
 
 | Area | Result | Evidence |
 |---|---|---|

@@ -1,4 +1,4 @@
-"""Bake the eight pinned Bedrock idle clips to local numeric tracks (no runtime expression evaluator)."""
+"""Bake the pinned Bedrock idle clips to local numeric tracks (no runtime expression evaluator)."""
 import ast
 import json
 import math
@@ -34,9 +34,10 @@ def sample(value, t):
 
 for directory in Path('public/models').glob('*/'):
     animations=json.loads((directory/'animations.json').read_text())['animations']
-    clip=next(k for suffix in ['battle_idle','ground_idle','air_idle'] for k in animations if k.endswith('.'+suffix))
+    order=['air_idle'] if directory.name=='zubat' else ['battle_idle','ground_idle','air_idle']
+    clip=next(k for suffix in order for k in animations if k.endswith('.'+suffix))
     source=animations[clip]
-    duration=8 if directory.name in ['magnemite','gastly'] else 4
+    duration=8 if directory.name in ['magnemite','gastly'] else (2 if directory.name=="pikachu" else 4)
     fps=12
     tracks=[]
     for bone,channels in source['bones'].items():

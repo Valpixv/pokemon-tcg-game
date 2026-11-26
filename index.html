@@ -37,6 +37,11 @@
     button.big.alt { color:#eef6fa; background:#274259; }
     button:hover { filter:brightness(1.1); }
     button:focus-visible { outline:3px solid white; outline-offset:3px; }
+    #menu { place-items:safe center; }
+    .demos { margin:16px 0 0; border-top:1px solid #416075; padding-top:12px; display:flex; flex-wrap:wrap; align-items:center; gap:6px 16px; }
+    .demos span { color:#c3d3dd; font-size:13px; }
+    .demos a { color:#aee9fb; font-size:14px; text-underline-offset:3px; padding:4px 0; }
+    .demos a:focus-visible { outline:2px solid white; outline-offset:2px; }
     #status:empty { display:none; }
     #library { color:#f6f5e8; background:#11283b; border:1px solid #66849a; border-radius:16px; width:min(700px,94vw); max-height:88dvh; padding:20px; }
     #library::backdrop {background:#06111cd9}
@@ -53,6 +58,7 @@
     .tools input {width:60%;min-width:0} #library footer {display:flex;justify-content:space-between;align-items:center;margin:12px 0 0}
     .credits {display:block;color:#b6dae7;margin-top:14px;font-size:13px}
   </style>
+  <link rel="stylesheet" href="%BASE_URL%trainer-kit/terminal.css">
 </head>
 <body>
   <div id="app"></div>
@@ -68,7 +74,9 @@
         <label>Host matchup <select id="hostTeam"><option value="">Original demo</option><option value="random">Surprise me</option></select></label><div class="row"><button id="btnHost">HOST</button></div>
         <div class="row"><input type="text" id="code" maxlength="6" placeholder="ROOM" autocomplete="off" aria-label="Room code" /><button id="btnJoin">JOIN</button></div>
       </div>
+      <nav class="demos" aria-label="Watch a desktop demo"><span>Watch a demo</span><a href="?demo=opening-exchange&amp;seed=1024">Opening exchange</a><a href="?demo=team-showcase&amp;seed=1024">Team showcase</a><a href="?demo=knockout-promotion">Knockout and promotion</a><a href="?demo=hex-on-bench">Hex on the bench</a></nav>
       <label class="opt"><input type="checkbox" id="skipHints" /> Skip tutorial hints</label>
+      <div class="row opts" style="gap:18px;margin:0"><label class="opt"><input type="checkbox" id="voiceOn" /> Announcer voice</label><label class="opt"><input type="checkbox" id="crowdOn" /> Crowd ambience</label></div>
       <div id="status" role="status" aria-live="polite"></div>
     </div>
   </div>
@@ -79,5 +87,6 @@
     <div><button id="seat0">Your seat</button><button id="seat1">Opposite seat</button><button id="toMenu">Menu</button></div>
   </div>
   <script type="module" src="/src/main.js"></script>
+  <script type="module" src="/src/view/director.js"></script>
 </body>
 </html>

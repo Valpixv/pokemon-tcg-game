@@ -44,7 +44,9 @@ export function cardFaceTexture(id) {
   g.fillText(def.dex ? 'BASIC' : 'TRAINER  /  ITEM',22,29);
   g.font = 'bold 29px system-ui'; g.fillText(def.name,21,59);
   if (def.hp) {
-    g.textAlign = 'right'; g.font = 'bold 22px system-ui'; g.fillText(`HP ${def.hp}`,298,58); g.textAlign = 'left';
+    g.fillStyle = '#28343a'; roundRect(g,220,34,78,29,8); g.fill();
+    g.fillStyle = '#fff8dc'; g.textAlign = 'center'; g.font = 'bold 20px system-ui';
+    g.fillText(`HP ${def.hp}`,259,55); g.textAlign = 'left';
   }
   const sky = g.createRadialGradient(145,130,6,145,160,172);
   sky.addColorStop(0,'#fffae7'); sky.addColorStop(.62,col.border); sky.addColorStop(1,col.fill);

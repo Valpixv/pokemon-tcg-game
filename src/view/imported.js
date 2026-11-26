@@ -3,7 +3,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 
 const cache = new Map();
 const rad = Math.PI / 180;
-const extent = {bulbasaur:.078,charmander:.079,squirtle:.072,eevee:.081,gastly:.061,psyduck:.073,sandshrew:.070,magnemite:.080};
+const speciesFolder = {gloomwing:"zubat",voltpip:"pikachu"};
+const extent = {gloomwing:.107,voltpip:.078,bulbasaur:.078,charmander:.079,squirtle:.072,eevee:.081,gastly:.061,psyduck:.073,sandshrew:.070,magnemite:.080};
 export const importedSpecies = Object.keys(extent);
 
 function rotation(angles = [0,0,0]) {
@@ -34,7 +35,7 @@ function cubeGeometry(cube, bone, desc) {
 }
 
 async function load(id) {
-  const root = import.meta.env.BASE_URL+'models/'+id+'/';
+  const root = import.meta.env.BASE_URL+'models/'+(speciesFolder[id] || id)+'/';
   const json = async file => { const r=await fetch(root+file); if(!r.ok) throw Error('Missing '+id+' '+file); return r.json(); };
   const [raw,animation,skin]=await Promise.all([json('model.json'),json('idle.json'),new THREE.TextureLoader().loadAsync(root+'skin.png')]);
   skin.colorSpace=THREE.SRGBColorSpace; skin.magFilter=THREE.NearestFilter; skin.userData.shared=true;
@@ -63,7 +64,10 @@ export function buildRig(source,id) {
     if(b.mesh)node.add(new THREE.Mesh(b.mesh,material));
     node.rotation.copy(rotation(b.rotation));
     // Alternate facial expressions and equipment are additional meshes on these source rigs.
+    if(id==='gloomwing' && /mouth_closed|wings_folded/.test(b.name))node.visible=false;
+    if(id==='voltpip' && /cheek_active|acting_teeth|eye_emote|eyeshine_.*2/.test(b.name))node.visible=false;
     if(/eyelid|ditto|blush|glasses|mouth_open|emote2|pupil_closed|eye_angry|eye_sad|pupil_happy|pupil_recoil|angry_eye|tongue|mouth_full|mouth_half|^vine_|^ball$/.test(b.name))node.visible=false;
+    if(id==='gloomwing' && /^mouth_open(?:_bottom)?$/.test(b.name))node.visible=true;
   }
   for(const b of source.bones){
     const node=nodes.get(b.name);node.position.copy(pivots.get(b.name));

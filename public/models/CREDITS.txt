@@ -54,3 +54,15 @@ https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c64
 magnemite.geo.json / magnemite.png / magnemite.animation.json
 Runtime animation: animation.magnemite.air_idle
 License copy: magnemite/LICENSE.txt
+
+Pikachu — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0025_pikachu
+pikachu_male.geo.json / pikachu.png / pikachu.animation.json
+Runtime animation: animation.pikachu.battle_idle
+License copy: pikachu/LICENSE.txt
+
+Zubat — Cobblemon team and contributors
+https://gitlab.com/cable-mc/cobblemon-assets/-/tree/90dceba19cdae707bbb8c1134c6488aaa6e911dc/blockbench/pokemon/gen1/0041_zubat
+zubat_male.geo.json / zubat.png / zubat.animation.json
+Runtime animation: animation.zubat.air_idle
+License copy: zubat/LICENSE.txt

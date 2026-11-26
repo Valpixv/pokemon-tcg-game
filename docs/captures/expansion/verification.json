@@ -1,14 +1,22 @@
 {
   "assets": [
-    "/?preview",
+    "/?mode=quick&preview",
+    "/trainer-kit/terminal.css",
     "/pokemon/zubat.png",
     "/pokemon/pikachu.png",
-    "/assets/index-CR1CFpXM.js",
+    "/trainer-kit/fire-stone.png",
+    "/trainer-kit/thunder-stone.png",
+    "/trainer-kit/water-stone.png",
+    "/trainer-kit/ultra-ball.png",
+    "/trainer-kit/great-ball.png",
+    "/trainer-kit/town-map.png",
+    "/trainer-kit/vs-seeker.png",
+    "/assets/index-CcFrpQKm.js",
     "/pokemon/koffing.png",
     "/pokemon/geodude.png",
     "/pokemon/potion.png",
-    "/pokemon/bulbasaur.png",
     "/pokemon/charmander.png",
+    "/pokemon/bulbasaur.png",
     "/pokemon/squirtle.png",
     "/pokemon/eevee.png",
     "/pokemon/gastly.png",
@@ -18,37 +26,50 @@
     "/pokemon/escape-rope.png",
     "/pokemon/poke-ball.png",
     "/pokemon/x-attack.png",
-    "/models/bulbasaur/skin.png",
-    "/models/squirtle/skin.png",
-    "/models/bulbasaur/model.json",
-    "/models/squirtle/model.json",
-    "/models/bulbasaur/idle.json",
-    "/models/squirtle/idle.json",
-    "/models/gastly/model.json",
-    "/models/gastly/idle.json",
-    "/models/gastly/skin.png",
-    "/models/sandshrew/skin.png",
-    "/models/sandshrew/model.json",
-    "/models/sandshrew/idle.json",
-    "/models/psyduck/model.json",
-    "/models/psyduck/idle.json",
-    "/models/psyduck/skin.png",
+    "/trainer-kit/poke-ball.png",
+    "/models/zubat/model.json",
+    "/models/zubat/idle.json",
+    "/models/zubat/skin.png",
+    "/models/pikachu/model.json",
+    "/models/pikachu/idle.json",
+    "/models/pikachu/skin.png",
+    "/?preview&demo=opening-exchange&seed=19",
+    "/?preview&demo=team-showcase&seed=19",
     "/models/charmander/skin.png",
     "/models/magnemite/skin.png",
     "/models/charmander/model.json",
-    "/models/magnemite/model.json",
     "/models/charmander/idle.json",
+    "/models/magnemite/model.json",
     "/models/magnemite/idle.json",
+    "/models/eevee/skin.png",
     "/models/eevee/idle.json",
     "/models/eevee/model.json",
-    "/models/eevee/skin.png",
+    "/?preview&demo=knockout-promotion&seed=19",
+    "/trainer-kit/fx-pokeball.png",
+    "/?preview&demo=hex-on-bench&seed=19",
+    "/models/gastly/skin.png",
+    "/models/bulbasaur/skin.png",
+    "/models/gastly/model.json",
+    "/models/gastly/idle.json",
+    "/models/bulbasaur/model.json",
+    "/models/bulbasaur/idle.json",
+    "/?preview",
+    "/models/squirtle/skin.png",
+    "/models/squirtle/model.json",
+    "/models/squirtle/idle.json",
+    "/trainer-kit/fx-shine.png",
+    "/models/sandshrew/skin.png",
+    "/models/sandshrew/model.json",
+    "/models/sandshrew/idle.json",
+    "/models/psyduck/skin.png",
+    "/models/psyduck/idle.json",
+    "/models/psyduck/model.json",
     "/?mode=quick&preview&team=bloom&away=coil&seed=1024",
     "/?mode=quick&preview&team=rush&seed=3",
     "/?mode=quick&preview&team=tide&seed=3",
     "/?mode=quick&preview&team=coil&seed=3",
-    "/?mode=quick&preview",
-    "/?mode=host&team=coil&away=tide&preview&room=VRB99L",
-    "/?mode=guest&preview&room=VRB99L"
+    "/?mode=host&team=coil&away=tide&preview&room=VSWUNC",
+    "/?mode=guest&preview&room=VSWUNC"
   ],
   "errors": [],
   "external": [],
@@ -126,10 +147,13 @@
       "rgbaBytes": 8192
     },
     "gloomwing": {
-      "calls": 19,
-      "triangles": 2128,
-      "texture": null,
-      "rgbaBytes": 0
+      "calls": 2,
+      "triangles": 278,
+      "texture": [
+        64,
+        64
+      ],
+      "rgbaBytes": 16384
     },
     "puffmire": {
       "calls": 20,
@@ -141,10 +165,13 @@
       "rgbaBytes": 1179648
     },
     "voltpip": {
-      "calls": 23,
-      "triangles": 7654,
-      "texture": null,
-      "rgbaBytes": 0
+      "calls": 2,
+      "triangles": 386,
+      "texture": [
+        128,
+        64
+      ],
+      "rgbaBytes": 32768
     },
     "pebblit": {
       "calls": 25,
@@ -154,45 +181,187 @@
     }
   },
   "checks": [
+    "cold production tab: gloomwing/voltpip load local zubat/pikachu model, skin and idle and animate independently",
     "preset menu, collection, registration, inspection, Vine Whip and opponent reply",
     "second finished match and fresh seeded matchup retain placement",
     "retreat, promotion, complete match, rematch retains table",
     "expanded virtual registration, canceled and confirmed Poké Ball search",
     "invalid and valid Switch through target picker",
     "all four presets, eight models, individual poses/materials, original 20/40 versus 40/60",
-    "expanded host/guest targeted trainer, confirmed damage, reconnect privacy and snapshot"
+    "expanded host/guest targeted trainer, confirmed damage, reconnect privacy and snapshot",
+    "all twelve species in four views beside local artwork, original eight plus gloomwing/voltpip as independent animated skins"
   ],
+  "legacy": {
+    "cold": {
+      "result": {
+        "gloomwing": {
+          "rig": true,
+          "skinned": true,
+          "texture": true,
+          "animated": true,
+          "separate": true,
+          "independentPose": true
+        },
+        "voltpip": {
+          "rig": true,
+          "skinned": true,
+          "texture": true,
+          "animated": true,
+          "separate": true,
+          "independentPose": true
+        }
+      },
+      "assets": [
+        "/models/zubat/model.json",
+        "/models/zubat/idle.json",
+        "/models/zubat/skin.png",
+        "/models/pikachu/model.json",
+        "/models/pikachu/idle.json",
+        "/models/pikachu/skin.png"
+      ]
+    }
+  },
+  "demos": {
+    "opening-exchange": {
+      "status": "done",
+      "error": null,
+      "actions": [
+        {
+          "type": "attack",
+          "move": "fangSnap"
+        },
+        {
+          "type": "attack",
+          "move": "sparkJab"
+        }
+      ],
+      "impacts": [
+        "fangSnap",
+        "sparkJab"
+      ],
+      "hp": [
+        20,
+        40
+      ]
+    },
+    "team-showcase": {
+      "status": "done",
+      "error": null,
+      "actions": [
+        {
+          "type": "trainer",
+          "card": "p0c10",
+          "target": "p0c2"
+        },
+        {
+          "type": "attack",
+          "move": "thunderShock"
+        },
+        {
+          "type": "trainer",
+          "card": "p1c21",
+          "bench": 0
+        },
+        {
+          "type": "attack",
+          "move": "quickAttack"
+        }
+      ],
+      "impacts": [
+        "thunderShock",
+        "quickAttack"
+      ],
+      "hp": [
+        30,
+        50
+      ]
+    },
+    "knockout-promotion": {
+      "status": "done",
+      "error": null,
+      "actions": [
+        {
+          "type": "attack",
+          "move": "takeDown"
+        },
+        {
+          "type": "promote",
+          "bench": 0
+        },
+        {
+          "type": "attack",
+          "move": "fangSnap"
+        },
+        {
+          "type": "attack",
+          "move": "takeDown"
+        },
+        null
+      ],
+      "impacts": [
+        "takeDown",
+        "fangSnap",
+        "takeDown"
+      ],
+      "hp": [
+        10,
+        0
+      ]
+    },
+    "hex-on-bench": {
+      "status": "done",
+      "error": null,
+      "actions": [
+        {
+          "type": "attack",
+          "move": "hex"
+        },
+        {
+          "type": "retreat",
+          "bench": 0
+        },
+        null
+      ],
+      "impacts": [
+        "hex"
+      ],
+      "hp": [
+        50,
+        50
+      ]
+    }
+  },
   "rematches": [
     {
       "before": {
-        "geometries": 140,
-        "textures": 51,
-        "objects": 371,
+        "geometries": 109,
+        "textures": 60,
+        "objects": 295,
         "interactables": 28,
-        "programs": 18
+        "programs": 30
       },
       "after": {
-        "geometries": 141,
-        "textures": 52,
-        "objects": 439,
+        "geometries": 110,
+        "textures": 61,
+        "objects": 368,
         "interactables": 28,
-        "programs": 18
+        "programs": 30
       }
     },
     {
       "before": {
-        "geometries": 141,
-        "textures": 52,
-        "objects": 369,
+        "geometries": 109,
+        "textures": 60,
+        "objects": 295,
         "interactables": 28,
-        "programs": 18
+        "programs": 30
       },
       "after": {
-        "geometries": 145,
-        "textures": 60,
-        "objects": 413,
+        "geometries": 113,
+        "textures": 68,
+        "objects": 342,
         "interactables": 28,
-        "programs": 18
+        "programs": 30
       }
     }
   ]

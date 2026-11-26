@@ -9,16 +9,17 @@ import { chooseAction } from '../rules/ai.js';
 import { createLocalSession, createHostSession, createGuestSession } from '../net/match.js';
 import { WsLink } from '../net/wslink.js';
 import { Board, Button3D, LAYOUT } from '../view/board.js';
-import { wait, tween } from '../view/util.js';
-import { play } from '../view/audio.js';
+import { wait, tween, hitStop } from '../view/util.js';
+import { play, announce, cryName } from '../view/audio.js';
 import { Placement } from './placement.js';
+import { DemoPlayer } from '../demo/demos.js';
 
 const NAME = (id) => CARDS[id]?.name || '?';
 // How each move's single impact looks and sounds (keyed by the move's effect).
 const IMPACT_LOOK = {
-  vine:{sound:'select',tint:'#7ebe66',light:'#b5ec80'},drain:{sound:'heal',tint:'#7fe6ac',light:'#99ffbb'},
-  water:{sound:'select',tint:'#67dbff',light:'#a2eeff'},ember:{sound:'rock',tint:'#ff9549',light:'#ffbc73'},
-  psychic:{sound:'charge',tint:'#ed84ff',light:'#ffb8fa'},ghost:{sound:'fang',tint:'#9174df',light:'#ca9bf7'},
+  vine:{sound:'vine',tint:'#7ebe66',light:'#b5ec80'},drain:{sound:'heal',tint:'#7fe6ac',light:'#99ffbb'},
+  water:{sound:'water',tint:'#67dbff',light:'#a2eeff'},ember:{sound:'ember',tint:'#ff9549',light:'#ffbc73'},
+  psychic:{sound:'charge',tint:'#ed84ff',light:'#ffb8fa'},ghost:{sound:'hex',tint:'#9174df',light:'#ca9bf7'},
   contact:{sound:'rock',tint:'#ffdeba',light:'#ffe8c7'},
   fang:     { effect: 'fang',     sound: 'fang',     tint: '#b04dff', light: '#c27bff' },
   electric: { effect: 'electric', sound: 'electric', tint: '#ffe14a', light: '#fff1a0' },
@@ -28,8 +29,11 @@ const IMPACT_LOOK = {
 const UP = (s) => s.toUpperCase();
 
 export class Game {
-  constructor(ctx, { mode, room = '', hints = true, setup = QUICK_BATTLE }) {
+  constructor(ctx, { mode, room = '', hints = true, setup = QUICK_BATTLE, demo = null }) {
     this.setup=setup;
+    // Solo demo playback: desktop Quick Battle only; never in XR or shared rooms.
+    this.demo = demo && mode === 'quick' && !ctx.isXR ? new DemoPlayer(demo, setup) : null;
+    if (this.demo) hints = false;
     this.ctx = ctx; this.mode = mode; this.room = room;
     this.seat = mode === 'guest' ? 1 : 0;
     this.shared = mode !== 'quick';
@@ -40,7 +44,7 @@ export class Game {
     this.ui = { mode: 'idle', selectedHand: null };
     this.flashMsg = null; this.flashUntil = 0; this.now = 0;
     this.paused = this.shared; this.connText = this.shared ? 'Connecting…' : '';
-    this.scriptedReplyDone = mode !== 'quick' || !!setup.teams;
+    this.scriptedReplyDone = mode !== 'quick' || !!setup.teams || !!this.demo;
     this.reg = null;
     this.previewOpen = false;
     this.stats = { impacts: [] }; // presentation log, read by the browser test harness
@@ -413,6 +417,9 @@ export class Game {
     }
   }
 
+  // On-table callout, read aloud when the optional announcer is on.
+  callout(text) { announce(text); return this.board.showCallout(text); }
+
   async presentEvent(e, finalState) {
     const b = this.board; const root = b.root;
     switch (e.type) {
@@ -425,16 +432,29 @@ export class Game {
         const move = MOVES[e.move];
         const look = IMPACT_LOOK[move.effect] || IMPACT_LOOK.fang;
         play('select', root);
-        const callout = b.showCallout(`${UP(NAME(e.id))} USED\n${UP(move.name)}!`);
+        play('windup', root, b.creatureLocal(e.seat, .03));
+        play(cryName(e.id, 'attack'), root, b.creatureLocal(e.seat, .03), { delay: .05 });
+        const callout = this.callout(`${UP(NAME(e.id))} USED\n${UP(move.name)}!`);
         if (e.bonus) b.hpBars[e.seat].chargeIcon.visible = false;
-        const from = b.creatureLocal(e.seat, atkC?.hover ? 0.045 : 0.03);
-        const to = b.creatureLocal(def, defC?.hover ? 0.045 : 0.03);
+        const localAnchor = (creature, key, seat) => creature
+          ? root.worldToLocal(creature.getAnchor(key).getWorldPosition(new THREE.Vector3()))
+          : b.creatureLocal(seat,.035);
+        const launchAnchor = move.effect === 'rock' ? 'handR' : 'front';
+        const to = localAnchor(defC,'center',def);
         let impacted = false; const jobs = [];
         const impact = (point) => {
           if (impacted) return; impacted = true;
           this.stats.impacts.push({ move: e.move, t: this.now, to: e.to });
-          play(look.sound, root, point);
+          const dealt = e.damage || 0, heavy = dealt >= 30 || e.to === 0;
+          play(look.sound, root, point, { gain: .8 + Math.min(dealt, 60) / 150 });
+          if (heavy) play('thump', root, point);
+          if (dealt > 0) play(cryName(e.targetId, 'hurt'), root, point, { delay: .14 });
+          hitStop(heavy ? .09 : .06);
+          jobs.push(b.effects.burst(move.effect, point, b.creatureLocal(def, 0), heavy));
+          if (heavy && !this.ctx.isXR) globalThis.dispatchEvent?.(new CustomEvent('tabletop-shake', { detail: .0035 })); // desktop only: never move a headset view
           if (look.effect) jobs.push(b.effects[look.effect](point));
+          jobs.push(b.effects.damage(point,e));
+          if(e.blocked || e.dispelled?.guard)defC?.setGuarded(false);
           jobs.push(b.flashLight(point, look.light));
           if (defC) jobs.push(defC.hit(look.tint));
           jobs.push(b.hpBars[def].animateTo(e.to));
@@ -442,14 +462,16 @@ export class Game {
         // contact point: between the defender and the attacker's body at contact
         const contact = () => {
           if (!atkC) return to.clone();
-          const p = atkC.body.getWorldPosition(new THREE.Vector3()); root.worldToLocal(p);
+          const p = localAnchor(atkC,move.effect==='fang'?'mouth':'handR',e.seat);
           return to.clone().lerp(p, 0.35);
         };
         const onContact = () => {
+          const from = localAnchor(atkC,launchAnchor,e.seat);
           if (move.effect === 'spores') { play('spores', root, from); jobs.push(b.effects.spores(from, to, () => impact(to))); }
-          else if (move.effect === 'rock') jobs.push(b.effects.rock(from, to, () => impact(to)));
-          else if(atkC?.launchPoint && ['vine','water','ember','psychic','ghost','drain','electric'].includes(move.effect)){
-            const start=root.worldToLocal(atkC.launchPoint());jobs.push(b.effects.projectile(move.effect,start,to,()=>impact(to)));
+          else if (move.effect === 'rock') { play('whoosh', root, from); jobs.push(b.effects.rock(from, to, () => impact(to))); }
+          else if(e.move!=='sparkJab' && atkC?.launchPoint && ['vine','water','ember','psychic','ghost','drain','electric'].includes(move.effect)){
+            play('whoosh', root, from);
+            jobs.push(b.effects.projectile(move.effect,from,to,()=>impact(to)));
           } else impact(contact());
         };
         if (atkC) await atkC.attack(onContact); else onContact();
@@ -463,9 +485,11 @@ export class Game {
       }
       case 'charge': {
         const c = b.creatures[e.seat]; const pos = b.creatureLocal(e.seat, 0.03);
-        await b.showCallout(`${UP(NAME(e.id))} USED\n${UP(MOVES[e.move].name)}!`);
+        await this.callout(`${UP(NAME(e.id))} USED\n${UP(MOVES[e.move].name)}!`);
         play('charge', root, pos);
-        await Promise.all([b.effects.charge(pos), c?.chargeUp()]);
+        play(cryName(e.id, 'attack'), root, pos, { gain: .8 });
+        if(MOVES[e.move].kind==='guard')c?.setGuarded(true);
+        await Promise.all([b.effects.charge(pos), MOVES[e.move].kind==='guard'?c?.guard():c?.chargeUp()]);
         b.hpBars[e.seat].chargeIcon.set(MOVES[e.move].kind==='guard'?'◆':'⚡');b.hpBars[e.seat].chargeIcon.visible = true;
         await wait(0.3); b.hideCallout();
         break;
@@ -474,11 +498,13 @@ export class Game {
         if(e.active===false){this.setScore(e.score);this.flash(NAME(e.id)+' was knocked out on the bench');break;}
         const c = b.creatures[e.seat]; const pos = b.creatureLocal(e.seat, 0.02);
         await wait(0.15);
-        play('ko', root, pos);
+        play(cryName(e.id, 'faint'), root, pos);
+        play('ko', root, pos, { delay: .12 });
+        play('cheer', root, null, { delay: .5 });
         await Promise.all([c?.knockout(), b.effects.knockout(pos)]);
         b.removeCreature(e.seat); b.hpBars[e.seat].visible = false;
         this.setScore(e.score);
-        await b.showCallout(`${UP(NAME(e.id))}\nIS KNOCKED OUT!`);
+        await this.callout(`${UP(NAME(e.id))}\nIS KNOCKED OUT!`);
         await wait(0.6); b.hideCallout();
         break;
       }
@@ -486,13 +512,14 @@ export class Game {
         const id = e.type === 'retreat' ? e.toId : e.id; const uid = e.type === 'retreat' ? e.to : e.uid;
         const old = b.creatures[e.seat];
         if (old) await tween(0.25, (p) => old.body.scale.setScalar(Math.max(0.001, 1 - p)));
-        await b.showCallout(e.type === 'retreat' ? `${UP(NAME(e.fromId))} RETREATS\n${UP(NAME(id))} IN!` : `GO,\n${UP(NAME(id))}!`);
+        await this.callout(e.type === 'retreat' ? `${UP(NAME(e.fromId))} RETREATS\n${UP(NAME(id))} IN!` : `GO,\n${UP(NAME(id))}!`);
         const card = findInPlay(finalState.players[e.seat], uid)?.card;
         b.hpBars[e.seat].set(card?.hp ?? CARDS[id].hp, card?.maxHp ?? CARDS[id].hp);
         b.hpBars[e.seat].chargeIcon.visible = !!card?.charged;
         b.hpBars[e.seat].visible = true;
         await b.spawnCreature(e.seat, { uid, id });
         play('confirm', root);
+        play(cryName(id, 'enter'), root, b.creatureLocal(e.seat, .03));
         if (e.seat === this.seat && this.cardMode === 'physical') this.flash('Swap your physical cards to match');
         await wait(0.35); b.hideCallout();
         break;
@@ -500,6 +527,11 @@ export class Game {
       case 'trainer': this.flash(NAME(e.id)+' played');break;
       case 'chip': {
         if(b.creatures[e.seat]?.userData.uid===e.uid)await b.hpBars[e.seat].animateTo(e.to);
+        if(e.source==='Hex') {
+          play('hex',root);
+          await this.callout(NAME(e.id).toUpperCase()+'  ·  HEX\n'+e.from+' → '+e.to+' HP');
+          await wait(.65); b.hideCallout();
+        }
         this.flash(e.source+' hit '+NAME(e.id));break;
       }
       case 'heal': {
@@ -523,6 +555,7 @@ export class Game {
         break;
       case 'win':
         play('win', root);
+        await b.creatures[e.seat]?.celebrate();
         break;
       case 'rematch':
         if(this.cardMode==='physical'){this.reg=null;this.phase='register';b.hpBars.forEach(h=>{h.visible=false;});this.startRegistration();}
@@ -534,7 +567,7 @@ export class Game {
         this.setMode('idle');
         break;
       case 'endTurn':
-        await b.showCallout(`${e.seat === this.seat ? 'YOU' : 'OPPONENT'}\nENDED THE TURN`); await wait(0.5); b.hideCallout();
+        await this.callout(`${e.seat === this.seat ? 'YOU' : 'OPPONENT'}\nENDED THE TURN`); await wait(0.5); b.hideCallout();
         break;
       default: break;
     }
@@ -563,7 +596,7 @@ export class Game {
       b.hpBars[seat].set(a.hp, a.maxHp);
       const tags=[a.charged?'⚡':'',a.guard?'◆':'',a.hex?'☾':''].join('');
       b.hpBars[seat].chargeIcon.set(tags);b.hpBars[seat].chargeIcon.visible=!!tags;
-      jobs.push(b.spawnCreature(seat, a, { animate }));
+      jobs.push(b.spawnCreature(seat, a, { animate }).then(figure=>figure?.setGuarded(a.guard)));
     }
     await Promise.all(jobs);
     this.refreshUI();
@@ -575,6 +608,7 @@ export class Game {
     if (!st) { b.rightPanel.set(this.connText || 'Connecting…'); b.leftPanel.set(this.shared ? `Room ${this.room}` : ''); return; }
     const me = st.players[this.seat];
     const battle = this.phase === 'battle';
+    b.setTurn(battle && st.phase==='play' ? st.current : null);
     const reg = this.phase === 'register' && this.reg;
     const myPromote = st.phase === 'promote' && st.pendingPromote === this.seat;
 
@@ -680,9 +714,10 @@ export class Game {
       if (pose) { this.board.root.position.copy(pose.pos); this.board.root.quaternion.copy(pose.quat); }
     }
     this.pump();
+    this.updateDemo();
     // AI turn (Quick Battle): same request path as a human, with a pause so
-    // the player can follow what happened.
-    if (this.mode === 'quick' && this.phase === 'battle' && !this.presenting && !this.queue.length && !this.aiPending) {
+    // the player can follow what happened. Paused while a demo is playing.
+    if (this.mode === 'quick' && this.phase === 'battle' && !this.presenting && !this.queue.length && !this.aiPending && !this.demo?.running) {
       const s = this.ai.state;
       const needs = s && ((s.phase === 'play' && s.current === 1) || (s.phase === 'promote' && s.pendingPromote === 1));
       if (needs) {
@@ -703,7 +738,44 @@ export class Game {
     this.board.update(dt, this.now, this.ctx.cameraWorld());
   }
 
+  // Demo: confirm the stand-in cards, then play the scripted steps through the
+  // same request paths as the local player (seat 0) and the AI (seat 1).
+  updateDemo() {
+    const d = this.demo; if (!d?.running) return;
+    const cue = (c, seat) => this.ctx.demoCue?.(c, seat);
+    if (this.phase === 'register' && this.reg) {
+      if (this.demoRegAt == null) { this.demoRegAt = this.now + 0.6; this.demoRegStart = this.now; cue('register', this.seat); return; }
+      if (this.now - this.demoRegStart > d.busy) { d.fail('Registration never completed', { cue }); this.recoverFromDemo(); return; }
+      if (this.now < this.demoRegAt) return;
+      const item = this.reg.items.find((it) => !it.done);
+      if (item) { this.demoRegAt = this.now + 0.35; this.regTapSlot(item.where); }
+      return;
+    }
+    d.tick(this.now, {
+      idle: this.canAct() && !this.aiPending,
+      // Intentional pauses freeze demo timers rather than counting as stuck.
+      paused: this.paused || this.previewOpen || this.phase !== 'battle',
+      stateFor: (seat) => (seat === this.seat ? this.st() : this.ai.state),
+      request: (seat, action) => {
+        if (seat === this.seat) this.request(action);
+        else { this.aiPending = true; this.ai.request(action); }
+      },
+      cue,
+    });
+    if (d.status === 'failed') this.recoverFromDemo();
+  }
+
+  // A failed demo hands the table back: drop any request the demo left
+  // hanging so the player can act, and normal solo AI resumes (it is gated
+  // only on demo.running). Presentations already queued play out normally.
+  recoverFromDemo() {
+    this.pendingReq = null; this.aiPending = false; this.aiWaitStart = null;
+    this.flash('Demo stopped — you have control', true);
+    this.refreshUI();
+  }
+
   dispose() {
+    this.demo?.dispose();
     this.placement?.dispose();
     this.link?.close();
     this.ctx.pointers.capture = null;

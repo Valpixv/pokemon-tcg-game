@@ -1,20 +1,38 @@
 import {preview} from 'vite';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const base='http://127.0.0.1:5268',cdp='http://127.0.0.1:9348',directory='docs/captures/expansion';
+const port=Number(process.env.VERIFY_PREVIEW_PORT || 5268);
+const base='http://127.0.0.1:'+port,cdp='http://127.0.0.1:'+Number(process.env.VERIFY_CDP_PORT || 9348),directory='docs/captures/expansion';
 await mkdir(directory,{recursive:true});
-const server=await preview({preview:{host:'127.0.0.1',port:5268,strictPort:true}});
+const server=await preview({preview:{host:'127.0.0.1',port,strictPort:true}});
 const harness=(await readFile('tools/harness.js','utf8')).replaceAll('export ','');
 const evidence={assets:new Set(),errors:[],external:[],models:{},checks:[]};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const RPC_TIMEOUT=Number(process.env.VERIFY_RPC_TIMEOUT || 120000);
+// Legacy card IDs that must now render the local Cobblemon rigs rather than procedural meshes.
+const LEGACY_RIGS={gloomwing:'zubat',voltpip:'pikachu'};
 async function client(){
   const t=await(await fetch(cdp+'/json/new?about:blank',{method:'PUT'})).json();
-  const ws=new WebSocket(t.webSocketDebuggerUrl);await new Promise(r=>ws.onopen=r);
-  let seq=0;const pending=new Map();
-  function send(method,params={}){const id=++seq;return new Promise(r=>{pending.set(id,r);ws.send(JSON.stringify({id,method,params}))})}
-  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){pending.get(m.id)?.(m.result);pending.delete(m.id)}
-    if(m.method==='Fetch.requestPaused'){const {requestId,request}=m.params;if(new URL(request.url).origin===base)send('Fetch.continueRequest',{requestId});else{evidence.external.push(request.url);send('Fetch.failRequest',{requestId,errorReason:'InternetDisconnected'})}}
-    if(m.method==='Network.responseReceived'){const r=m.params.response;if(r.status===200)evidence.assets.add(r.url.slice(base.length));}
+  const ws=new WebSocket(t.webSocketDebuggerUrl);
+  // Fail explicitly instead of hanging when the tab socket never opens, closes, or stops answering.
+  await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('CDP socket open timed out')),RPC_TIMEOUT);
+    ws.onopen=()=>{clearTimeout(timer);resolve()};ws.onerror=()=>{clearTimeout(timer);reject(Error('CDP socket failed to open'))};});
+  let seq=0,closed=null;const pending=new Map(),seen=new Set();
+  function failAll(reason){closed=reason;for(const p of pending.values())p.reject(Error(reason));pending.clear()}
+  ws.onclose=e=>failAll('CDP socket closed (code '+e.code+')');ws.onerror=()=>failAll('CDP socket error');
+  function send(method,params={}){
+    if(closed)return Promise.reject(Error(closed+' before '+method));
+    const id=++seq;
+    return new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>{pending.delete(id);reject(Error('CDP '+method+' timed out after '+RPC_TIMEOUT+'ms'))},RPC_TIMEOUT);
+      pending.set(id,{resolve:v=>{clearTimeout(timer);resolve(v)},reject:e=>{clearTimeout(timer);reject(e)}});
+      try{ws.send(JSON.stringify({id,method,params}))}catch(e){pending.get(id)?.reject(e);pending.delete(id)}
+    });
+  }
+  const quiet=p=>p.catch(e=>{if(!closed)evidence.errors.push('CDP '+e.message)});
+  ws.onmessage=e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);pending.delete(m.id);if(p)m.error?p.reject(Error(m.error.message)):p.resolve(m.result)}
+    if(m.method==='Fetch.requestPaused'){const {requestId,request}=m.params;if(new URL(request.url).origin===base)quiet(send('Fetch.continueRequest',{requestId}));else{evidence.external.push(request.url);quiet(send('Fetch.failRequest',{requestId,errorReason:'InternetDisconnected'}))}}
+    if(m.method==='Network.responseReceived'){const r=m.params.response;if(r.status===200&&r.url.startsWith(base)){evidence.assets.add(r.url.slice(base.length));seen.add(r.url.slice(base.length))}}
     if(m.method==='Runtime.exceptionThrown')evidence.errors.push(m.params.exceptionDetails.exception?.description);
   };
   async function ev(expression){const r=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value}
@@ -25,15 +43,15 @@ async function client(){
   async function pic(name){const r=await send('Page.captureScreenshot',{format:'jpeg',quality:88});await writeFile(directory+'/'+name+'.jpg',Buffer.from(r.data,'base64'))}
   await send('Runtime.enable');await send('Network.enable');await send('Network.setCacheDisabled',{cacheDisabled:true});await send('Fetch.enable',{patterns:[{urlPattern:'*'}]});
   await send('Emulation.setDeviceMetricsOverride',{width:960,height:680,deviceScaleFactor:1,mobile:false});
-  return {ev,nav,battle,ready,until,pic,close:async()=>{await fetch(cdp+'/json/close/'+t.id);ws.close()}};
+  return {ev,nav,battle,ready,until,pic,seen,close:async()=>{try{await fetch(cdp+'/json/close/'+t.id)}finally{ws.onclose=null;ws.close()}}};
 }
 const c=await client();let guest;
 const profileName=process.argv[2];
-if(profileName && !['before','after'].includes(profileName))throw Error('Use before or after for a profile run');
+if(profileName && !['before','after','release'].includes(profileName))throw Error('Use before, after, or release for a profile run');
 async function profileBattle(){
   const samples=[];
-  for(const matchup of ['rush','bloom']){
-    await c.nav('/?mode=quick&preview&team='+matchup+'&away=tide&seed=1024');await c.battle();
+  for(const matchup of (profileName==='release'?['rush','bloom','original']:['rush','bloom'])){
+    await c.nav(matchup==='original'?'/?mode=quick&preview':'/?mode=quick&preview&team='+matchup+'&away=tide&seed=1024');await c.battle();
     if(matchup==='rush')await c.ev(`(async()=>{const g=__game,p=g.st().players[0];
       g.tapHand(p.hand.find(c=>c.id==='switch').uid);g.tapSlot({where:'bench',index:0});await H.step(2);})()`);
     await c.until('(async()=>{await H.step(.15);return __game.canAct()})()');
@@ -44,11 +62,57 @@ async function profileBattle(){
         gpu:ext?gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),...profile};
     })()`));
   }
-  assert.deepEqual(samples.map(s=>s.confirmed),['quickAttack','vineWhip']);
+  assert.deepEqual(samples.map(s=>s.confirmed),profileName==='release'?['quickAttack','vineWhip','fangSnap']:['quickAttack','vineWhip']);
   await writeFile(directory+'/profile-'+profileName+'.json',JSON.stringify(samples,null,2));console.log(samples);
 }
 try{
   if(profileName)await profileBattle();else{
+  // Cold production tab (cache disabled, fresh target): legacy IDs must fetch their own local rig files
+  // and build independently animated imported rigs, not procedural fallbacks.
+  {
+    const cold=await client();
+    try{
+      await cold.nav('/?mode=quick&preview');await cold.until('!!window.__game?.board?.spawnCreature');
+      const legacy=await cold.ev(`(async()=>{const b=__game.board,out={};
+        for(const id of ${JSON.stringify(Object.keys(LEGACY_RIGS))}){
+          const a=await b.spawnCreature(0,{id,uid:'cold-a-'+id},{animate:false}),z=await b.spawnCreature(1,{id,uid:'cold-b-'+id},{animate:false});
+          let mesh;a.traverse(o=>{if(o.isSkinnedMesh)mesh=o});
+          const r={rig:!!a.rig,skinned:!!mesh,texture:!!a.mats?.find(m=>m.map)?.map?.image};
+          if(a.rig&&mesh){
+            const v=new mesh.position.constructor(),pos=()=>{a.updateMatrixWorld(true);const xyz=[];for(let i=0;i<mesh.geometry.attributes.position.count;i++){mesh.getVertexPosition(i,v);xyz.push(v.x,v.y,v.z)}return xyz};
+            a.update(0,.2);const i0=pos();a.update(0,.67);r.animated=pos().some((x,i)=>Math.abs(x-i0[i])>.0001);a.update(0,.2);
+            r.separate=z.rig&&z.rig.rig!==a.rig.rig&&z.mats[0]!==a.mats[0];
+            const nb=z.rig.nodes.values().next().value,old=nb.rotation.x;a.rig.nodes.values().next().value.rotation.x+=.2;
+            r.independentPose=nb.rotation.x===old;a.rig.nodes.values().next().value.rotation.x-=.2;
+          }
+          a.removeFromParent?.();z.removeFromParent?.();out[id]=r;
+        }return out;})()`);
+      for(const [id,folder] of Object.entries(LEGACY_RIGS)){
+        const r=legacy[id];
+        assert.deepEqual(r,{rig:true,skinned:true,texture:true,animated:true,separate:true,independentPose:true},id+' is not an independent animated local rig: '+JSON.stringify(r));
+        for(const file of ['model.json','skin.png','idle.json'])
+          assert.ok([...cold.seen].some(u=>u.split('?')[0]==='/models/'+folder+'/'+file),id+' did not load /models/'+folder+'/'+file+' in cold tab');
+      }
+      (evidence.legacy={}).cold={result:legacy,assets:[...cold.seen].filter(u=>Object.values(LEGACY_RIGS).some(f=>u.startsWith('/models/'+f+'/')))};
+      evidence.checks.push('cold production tab: gloomwing/voltpip load local zubat/pikachu model, skin and idle and animate independently');
+    }finally{await cold.close()}
+  }
+  evidence.demos={};
+  for (const name of ['opening-exchange','team-showcase','knockout-promotion','hex-on-bench']) {
+    await c.nav('/?preview&demo='+name+'&seed=19');
+    await c.until('!!window.__game?.demo');
+    await c.ev('window.__paused=true');
+    await c.until("(async()=>{await __step(.3);return __game.demo.status!=='running'})()");
+    const result=await c.ev("({status:__game.demo.status,error:__game.demo.error,actions:__game.demo.log.map(x=>x.action),impacts:__game.stats.impacts.map(x=>x.move),hp:__game.st().players.map(p=>p.active?.hp ?? 0)})");
+    assert.equal(result.status,'done',result.error);
+    assert.equal(result.impacts.length,name==='knockout-promotion'?3:name==='hex-on-bench'?1:2);
+    if(name==='opening-exchange'){
+      assert.deepEqual(result.hp,[20,40]);
+      assert.deepEqual(result.impacts,['fangSnap','sparkJab']);
+    }
+    evidence.demos[name]=result;
+    console.log(name,result);
+  }
   await c.nav('/?preview');await c.ev("document.getElementById('btnCollection').click()");await c.until("document.querySelector('.collection button')");
   await c.ev("document.querySelector('.collection button').click()");await c.until("document.querySelector('.details canvas')");await c.ev("document.querySelector('#closeLibrary').click();document.querySelector('#btnTeams').click();document.querySelector('#library input[type=number]').value='1024';document.querySelectorAll('.teams button')[2].click()");
   await c.battle();console.log('Menu and register',await c.ev('H.snapshot()'));await c.pic('garden-near');await c.ev('H.seat(1);H.step(.2)');await c.pic('garden-far');await c.ev('H.seat(0);H.step(.2)');
@@ -92,6 +156,7 @@ try{
     const portrait=new Image();portrait.src='/pokemon/'+name+'.png';await portrait.decode();
     ctx.fillStyle='#dce8d3';ctx.fillRect(0,index*220,260,220);ctx.drawImage(portrait,30,index*220+20,200,200);
     ctx.fillStyle='#15283a';ctx.font='14px system-ui';ctx.fillText(name+' artwork',10,index*220+15);
+    if(${JSON.stringify(Object.keys(LEGACY_RIGS))}.includes(id)&&!a.rig)throw Error('Procedural fallback for legacy id: '+id);
     if(a.rig){
     let mesh;
     a.traverse(o=>{if(o.isSkinnedMesh)mesh=o;});
@@ -114,7 +179,7 @@ try{
     a.rig.nodes.values().next().value.rotation.x-=.2;a.flash(0);
     }
     for(const [j,angle] of [0,.64,Math.PI/2,Math.PI].entries()){
-      const distance=id==='gloomwing'?.235:id==='voltpip'?.19:.17;const y=a.hover?.052:.036;cam.position.set(distance*Math.sin(angle),y+.028,distance*Math.cos(angle));cam.lookAt(0,y,0);renderer.render(stage,cam);
+      const distance=id==='gloomwing'?.27:id==='voltpip'?.19:.17;const y=id==='gloomwing'?.067:a.hover?.052:.036;cam.position.set(distance*Math.sin(angle),y+.028,distance*Math.cos(angle));cam.lookAt(0,y,0);renderer.render(stage,cam);
       const x=(j+1)*260,row=index*220;ctx.drawImage(renderer.domElement,x,row+20,260,200);ctx.fillStyle='#15283a';ctx.fillRect(x,row,260,20);ctx.fillStyle='#fff';ctx.font='14px system-ui';ctx.fillText(name+' / '+['front','three-quarter','side','rear'][j],x+10,row+15);
     }
     const skin=a.mats.find(m=>m.map)?.map.image;metrics[id]={calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,texture:skin?[skin.width,skin.height]:null,rgbaBytes:skin?skin.width*skin.height*4:0};
@@ -159,7 +224,9 @@ try{
   assert.ok(await guest.ev('__game.st().players[0].hand.length===0 && __game.st().players[1].active.hp===30 && __game.stats.impacts.length===0'));
   evidence.checks.push('expanded host/guest targeted trainer, confirmed damage, reconnect privacy and snapshot');
   assert.deepEqual(evidence.external,[]);assert.deepEqual(evidence.errors,[]);
-  evidence.checks.push('all twelve species in four views beside local artwork, eight independent animated skins');
+  const rigged=Object.entries(evidence.models).filter(([,m])=>m.texture).map(([id])=>id);
+  for(const id of ['bulbasaur','charmander','squirtle','eevee','gastly','psyduck','sandshrew','magnemite',...Object.keys(LEGACY_RIGS)])assert.ok(rigged.includes(id),'Missing skinned rig: '+id);
+  evidence.checks.push('all twelve species in four views beside local artwork, original eight plus gloomwing/voltpip as independent animated skins');
   await writeFile(directory+'/verification.json',JSON.stringify({...evidence,assets:[...evidence.assets]},null,2));
   console.log(evidence.checks,evidence.models);
   }

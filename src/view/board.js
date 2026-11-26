@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { ARENA, makeArena } from './arena.js';
 import { CARD_W, CARD_H, makeCardMesh, cardFaceTexture, cardBackTexture } from './cards.js';
 import { Label, roundRect, faceCameraY, tween, ease, lerp } from './util.js';
+import { drawBall } from './trainer-emblem.js';
 import { Effects } from './effects.js';
 import { makeCreature } from './creatures.js';
 
@@ -32,13 +33,19 @@ const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-ra
 
 // ----------------------------------------------------------------- pieces
 function bracket(w, h, { arm = 0.012, thick = 0.0016, color = '#ffffff', opacity = 0.95 } = {}) {
-  const g = new THREE.Group();
-  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
-  const bar = (bw, bh, x, y) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), mat); m.position.set(x, y, 0); g.add(m); };
+  const vertices = [];
+  const bar = (bw, bh, x, y) => {
+    const l = x - bw / 2, r = x + bw / 2, b = y - bh / 2, t = y + bh / 2;
+    vertices.push(l,b,0, r,b,0, r,t,0, l,b,0, r,t,0, l,t,0);
+  };
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
     bar(arm, thick, sx * (w / 2 - arm / 2), sy * (h / 2 - thick / 2));
-    bar(thick, arm, sx * (w / 2 - thick / 2), sy * (h / 2 - arm / 2));
+    bar(thick, arm - thick, sx * (w / 2 - thick / 2), sy * (h / 2 - (arm + thick) / 2));
   }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false });
+  const g = new THREE.Mesh(geometry, mat);
   g.rotation.x = FLAT; g.position.y = 0.0012;
   g.userData.mat = mat;
   return g;
@@ -88,9 +95,9 @@ export class Button3D extends THREE.Group {
     let fill;
     if (pressed || focus) {
       fill = g.createLinearGradient(0, 0, W, H);
-      fill.addColorStop(0, pressed ? 'rgb(150,255,255)' : 'rgb(46,196,236)');
-      fill.addColorStop(1, pressed ? 'rgb(205,150,255)' : 'rgb(128,82,240)');
-    } else fill = this.dim ? 'rgba(52,56,66,0.7)' : 'rgba(16,22,34,0.86)';
+      fill.addColorStop(0, pressed ? 'rgb(150,255,255)' : '#275878');
+      fill.addColorStop(1, pressed ? 'rgb(205,150,255)' : '#1c3e59');
+    } else fill = this.dim ? 'rgba(52,56,66,0.7)' : '#203d51';
     g.fillStyle = fill; roundRect(g, 4, 4, W - 8, H - 8, H * 0.3); g.fill();
     if (this.dim) { // hatch so "unavailable" does not rely on colour alone
       g.save(); g.clip(); g.strokeStyle = 'rgba(255,255,255,0.09)'; g.lineWidth = 6;
@@ -99,13 +106,15 @@ export class Button3D extends THREE.Group {
     }
     g.strokeStyle = this.hover ? (this.dim ? 'rgba(255,196,90,0.95)' : '#ffffff') : 'rgba(255,255,255,0.55)';
     g.lineWidth = this.hover ? 7 : 4; roundRect(g, 4, 4, W - 8, H - 8, H * 0.3); g.stroke();
+    drawBall(g, H * .46, H / 2, H * .24, this.dim ? '#83929a' : '#ff625b');
+    const labelLeft = H * .86;
     g.fillStyle = this.dim ? 'rgba(255,255,255,0.5)' : (pressed ? '#101828' : '#ffffff');
     g.textBaseline = 'middle'; g.font = `800 ${Math.round(H * 0.44)}px system-ui, sans-serif`;
     if ('letterSpacing' in g) g.letterSpacing = '2px';
     if (this.sub) {
-      g.textAlign = 'left'; g.fillText(this.text, W * 0.07, H / 2, W * 0.66);
+      g.textAlign = 'left'; g.fillText(this.text, labelLeft, H / 2, W * .72 - labelLeft);
       g.textAlign = 'right'; g.fillStyle = this.dim ? 'rgba(255,230,140,0.55)' : (pressed ? '#3a2400' : '#ffe27a'); g.fillText(this.sub, W * 0.93, H / 2, W * 0.2);
-    } else { g.textAlign = 'center'; g.fillText(this.text, W / 2, H / 2, W * 0.9); }
+    } else { g.textAlign = 'center'; g.fillText(this.text, (labelLeft + W * .94) / 2, H / 2, W * .94 - labelLeft); }
     this.tex.needsUpdate = true;
   }
   dispose() { liveButtons.delete(this); this.ix.remove(this.target); this.tex.dispose(); }
@@ -123,12 +132,18 @@ export class HPBar extends THREE.Group {
     this.fillMesh = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.004, 0.0036), new THREE.MeshBasicMaterial({ color: '#45f06a', depthWrite: false }));
     this.fillMesh.geometry.translate((W - 0.004) / 2, 0, 0);
     this.fillMesh.position.set(-(W - 0.004) / 2, -0.0031, 0.0002);
+    this.trail = new THREE.Mesh(this.fillMesh.geometry,
+      new THREE.MeshBasicMaterial({ color: '#fff1c4', depthWrite: false }));
+    this.trail.position.copy(this.fillMesh.position);
+    this.trail.position.z -= .00005;
+    this.trail.renderOrder = 11;
+    this.trail.visible = false;
     this.label = new Label({ width: W - 0.004, height: 0.0072, px: 448, font: '800 44px system-ui, sans-serif', spacing: 2 });
     this.label.position.set(0, 0.0026, 0.0003);
     this.chargeIcon = new Label({ width: 0.013, height: 0.013, px: 64, font: '700 54px system-ui', color: '#ffe14a', bg: 'rgba(12,16,24,0.84)', radius: 0.5 }).set('⚡');
     this.chargeIcon.position.set(W / 2 + 0.0085, 0, 0); this.chargeIcon.visible = false;
     [this.back, this.track, this.fillMesh, this.label, this.chargeIcon].forEach((m) => { m.renderOrder = 11; });
-    this.add(this.back, this.track, this.fillMesh, this.label, this.chargeIcon);
+    this.add(this.back, this.track, this.trail, this.fillMesh, this.label, this.chargeIcon);
     this.hp = 0; this.max = 1;
   }
   set(hp, max) {
@@ -140,7 +155,15 @@ export class HPBar extends THREE.Group {
   }
   async animateTo(to, dur = 0.5) {
     const from = this.hp;
-    await tween(dur, (p) => this.set(lerp(from, to, ease.out(p)), this.max));
+    this.trail.visible = from > to;
+    await tween(dur, (p) => {
+      this.set(lerp(from, to, ease.out(p)), this.max);
+      if (this.trail.visible) {
+        const follow = Math.max(0, (p - .42) / .58);
+        this.trail.scale.x = Math.max(.0001, lerp(from, to, ease.out(follow)) / this.max);
+      }
+    });
+    this.trail.visible = false;
     this.set(to, this.max);
   }
 }
@@ -362,7 +385,8 @@ export class Board {
     this.setSlotCard(this.activeSlot, a, a ? `ACTIVE   HP ${a.hp}/${a.maxHp}` : 'ACTIVE');
     me.bench.forEach((c, i) => {
       const sl = this.benchSlots[i];
-      this.setSlotCard(sl, c, c ? `HP ${c.hp}/${c.maxHp}` : '');
+      const mark = c?.hex ? '  HEX ' + c.hex : '';
+      this.setSlotCard(sl, c, c ? `HP ${c.hp}/${c.maxHp}${mark}` : '');
       sl.plus.visible = !c && ui.benchOpen;
     });
     this.benchLabel.visible = true;
@@ -480,6 +504,7 @@ export class Board {
     c.updateWorldMatrix(true, true);
     const box = new THREE.Box3().setFromObject(c.body);
     c.userData.top = box.max.y - c.getWorldPosition(new THREE.Vector3()).y;
+    c.traverse((o) => { if (o.isMesh && o !== c.shadow) o.castShadow = true; }); // real shadow on desktop; the blob stays as contact grounding
     this.anchor[seat].add(c); this.creatures[seat] = c;
     if (animate) await c.appear(); else c.visible = true;
     return c;
@@ -525,7 +550,13 @@ export class Board {
     this.hint.userData.base = p.y;
   }
 
+  setTurn(seat) { this.activeTurnSeat = seat; }
+
   update(dt, t, camWorld) {
+    for (const [seat, arc] of this.arena.userData.seatArcs.entries()) {
+      const target = seat === this.activeTurnSeat ? .49 + .12 * Math.sin(t * 3.6) : .13;
+      arc.material.emissiveIntensity = damp(arc.material.emissiveIntensity, target, 9, dt);
+    }
     for (const c of this.creatures) c?.update(dt, t);
     this.placeHpBars(dt, camWorld);
     for (const b of this.hpBars) faceCameraY(b, camWorld);
